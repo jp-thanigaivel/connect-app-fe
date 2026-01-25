@@ -1,0 +1,11 @@
+{
+    "version": "3.3.6",
+    "app": {
+        "name": "connectapp",
+        "package_name": "com.example.connectapp"
+    },
+    "main": {},
+    "experimental": {
+        "load_packages": true
+    }
+}

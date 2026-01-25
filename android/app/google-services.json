@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "682993784674",
+    "project_id": "connect-app-iwood-technologies",
+    "storage_bucket": "connect-app-iwood-technologies.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:682993784674:android:e5e793c5abe1a178dcbe3b",
+        "android_client_info": {
+          "package_name": "com.iwoodtechnogies.connectapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "682993784674-16br41obm7bo9tr4hpb9aoc3qb9urjnl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.iwoodtechnogies.connectapp",
+            "certificate_hash": "c3f27d65b06159d27eb5d728c7feb391080d2e2a"
+          }
+        },
+        {
+          "client_id": "682993784674-brrijp4udqc9ene4osi1ci4c1030dtfb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCnNUtTLttXHZ9SVh8mfwRtus0fFPFEje0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "682993784674-brrijp4udqc9ene4osi1ci4c1030dtfb.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "682993784674-kjr2ut3aiu8qv5v5o4bdv3ki3u8400lc.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.iwoodtechnologies.connectapp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
