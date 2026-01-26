@@ -12,6 +12,9 @@ import 'package:connect/pages/edit_profile_page.dart';
 import 'package:connect/pages/terms_conditions_page.dart';
 import 'package:connect/pages/privacy_policy_page.dart';
 import 'package:connect/pages/profile_page.dart';
+import 'package:connect/pages/support_tickets_page.dart';
+import 'package:connect/pages/support_conversation_page.dart';
+import 'package:connect/models/support_ticket.dart';
 import 'package:connect/services/user_heartbeat_manager.dart';
 import 'package:connect/services/call_heartbeat_manager.dart';
 import 'dart:developer' as developer;
@@ -109,6 +112,21 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           'TermsConditionsPage': (context) => const TermsConditionsPage(),
           'PrivacyPolicyPage': (context) => const PrivacyPolicyPage(),
           'ProfilePage': (context) => const ProfilePage(),
+          'SupportTicketsPage': (context) => const SupportTicketsPage(),
+          'SupportConversationPage': (context) {
+            final ticket =
+                ModalRoute.of(context)?.settings.arguments as SupportTicket?;
+            return SupportConversationPage(
+                ticket: ticket ??
+                    SupportTicket(
+                        id: '',
+                        category: '',
+                        description: '',
+                        reference: SupportReference(type: '', id: ''),
+                        status: '',
+                        createdOn: '',
+                        ticketId: ''));
+          },
         },
       ),
     );

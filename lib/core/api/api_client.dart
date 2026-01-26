@@ -27,12 +27,18 @@ class ApiClient {
         },
         onError: (DioException e, handler) {
           final statusCode = e.response?.statusCode;
-          final message = e.response?.data?['status']?['statusDesc'] ??
+          final dynamic responseData = e.response?.data;
+          final dynamic statusObject =
+              responseData is Map ? responseData['status'] : null;
+          final String message = (statusObject is Map
+                  ? statusObject['statusDesc']?.toString()
+                  : null) ??
               _getFriendlyErrorMessage(e);
 
           developer.log(
             'API Error: [$statusCode] $message',
             name: 'ApiClient',
+            error: responseData,
           );
 
           if (statusCode == 401 || statusCode == 403) {
@@ -84,6 +90,20 @@ class ApiClient {
 
   void _showErrorSnackBar(String message) {
     UiUtils.showErrorSnackBar(message);
+  }
+
+  static String getErrorMessage(dynamic e) {
+    if (e is DioException) {
+      final dynamic responseData = e.response?.data;
+      if (responseData is Map && responseData['status'] != null) {
+        return responseData['status']['statusDesc']?.toString() ??
+            'An unknown error occurred';
+      }
+      return 'Request failed (${e.response?.statusCode ?? 'unknown error'}).';
+    }
+    return e.toString().contains('Exception:')
+        ? e.toString().split('Exception:').last
+        : 'An error occurred. Please try again.';
   }
 
   String _getFriendlyErrorMessage(DioException e) {

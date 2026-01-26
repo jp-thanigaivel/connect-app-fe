@@ -490,6 +490,14 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         const SizedBox(height: 12),
                         MenuItem(
+                          icon: Icons.support_agent_outlined,
+                          label: 'Support',
+                          onTap: () {
+                            Navigator.pushNamed(context, 'SupportTicketsPage');
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        MenuItem(
                           icon: Icons.logout_outlined,
                           label: 'Logout',
                           onTap: () {

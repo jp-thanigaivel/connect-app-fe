@@ -18,6 +18,7 @@ class ApiConstants {
   static const String callHistory = '/connect/app/api/v1/call/history';
   static const String searchConfig =
       '/connect/app/api/v1/experts/search-config';
+  static const String supportTickets = '/connect/app/api/v1/support/tickets';
   static const String adminLogin = '/connect/app/api/v1/admin/login';
   static const bool enableAdminLogin = false;
   static const String adminPhone = '9876543210';
