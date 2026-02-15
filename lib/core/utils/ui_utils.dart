@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:connect/main.dart';
+import 'package:connect/globals/navigator_key.dart';
 
 class UiUtils {
   static void showSuccessSnackBar(String message) {

@@ -12,9 +12,11 @@ import 'package:connect/pages/edit_profile_page.dart';
 import 'package:connect/pages/terms_conditions_page.dart';
 import 'package:connect/pages/privacy_policy_page.dart';
 import 'package:connect/pages/profile_page.dart';
+import 'package:connect/pages/edit_expert_profile_page.dart';
 import 'package:connect/pages/support_tickets_page.dart';
 import 'package:connect/pages/support_conversation_page.dart';
 import 'package:connect/models/support_ticket.dart';
+import 'package:connect/pages/expert_details_page.dart';
 import 'package:connect/services/user_heartbeat_manager.dart';
 import 'package:connect/services/call_heartbeat_manager.dart';
 import 'dart:developer' as developer;
@@ -22,9 +24,12 @@ import 'dart:developer' as developer;
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 
 @NowaGenerated()
+import 'package:connect/globals/navigator_key.dart';
+
+@NowaGenerated()
 late final SharedPreferences sharedPrefs;
 
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+// Navigator Refactored to globals/navigator_key.dart
 
 @NowaGenerated()
 main() async {
@@ -112,6 +117,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           'TermsConditionsPage': (context) => const TermsConditionsPage(),
           'PrivacyPolicyPage': (context) => const PrivacyPolicyPage(),
           'ProfilePage': (context) => const ProfilePage(),
+          'ExpertDetailsPage': (context) => const ExpertDetailsPage(),
+          'EditExpertProfilePage': (context) => const EditExpertProfilePage(),
           'SupportTicketsPage': (context) => const SupportTicketsPage(),
           'SupportConversationPage': (context) {
             final ticket =

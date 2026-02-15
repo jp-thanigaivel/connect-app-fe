@@ -3,6 +3,9 @@ import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:connect/pages/users_landing_page.dart';
 import 'package:connect/pages/recent_page.dart';
 import 'package:connect/pages/profile_page.dart';
+import 'package:connect/pages/settlements_landing_page.dart';
+import 'package:connect/pages/expert_details_page.dart';
+import 'package:connect/core/api/token_manager.dart';
 
 @NowaGenerated()
 class MainNavigationPage extends StatefulWidget {
@@ -16,12 +19,41 @@ class MainNavigationPage extends StatefulWidget {
 @NowaGenerated()
 class _MainNavigationPageState extends State<MainNavigationPage> {
   int _selectedIndex = 0;
-
-  final List<Widget> _pages = const [
-    UsersLandingPage(),
-    RecentPage(),
-    ProfilePage(),
+  String? _userType;
+  List<Widget> _pages = [
+    const Center(child: CircularProgressIndicator()),
+    const RecentPage(),
+    const ProfilePage(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _initializePages();
+  }
+
+  Future<void> _initializePages() async {
+    final userType = await TokenManager.getUserType();
+    if (mounted) {
+      setState(() {
+        _userType = userType;
+        if (userType == 'EXPERT') {
+          _pages = [
+            const SettlementsLandingPage(),
+            const RecentPage(),
+            const ExpertDetailsPage(),
+            const ProfilePage(),
+          ];
+        } else {
+          _pages = [
+            const UsersLandingPage(),
+            const RecentPage(),
+            const ProfilePage(),
+          ];
+        }
+      });
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -31,6 +63,12 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_userType == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final isExpert = _userType == 'EXPERT';
+
     return Scaffold(
       body: _pages[_selectedIndex],
       bottomNavigationBar: Container(
@@ -49,18 +87,24 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
           backgroundColor: Theme.of(context).colorScheme.surface,
           indicatorColor: Theme.of(context).colorScheme.primaryContainer,
           height: 70,
-          destinations: const [
-            NavigationDestination(
+          destinations: [
+            const NavigationDestination(
               icon: Icon(Icons.home_outlined),
               selectedIcon: Icon(Icons.home),
               label: 'Home',
             ),
-            NavigationDestination(
+            const NavigationDestination(
               icon: Icon(Icons.history_outlined),
               selectedIcon: Icon(Icons.history),
               label: 'Recent',
             ),
-            NavigationDestination(
+            if (isExpert)
+              const NavigationDestination(
+                icon: Icon(Icons.psychology_outlined),
+                selectedIcon: Icon(Icons.psychology),
+                label: 'Expert',
+              ),
+            const NavigationDestination(
               icon: Icon(Icons.person_outline),
               selectedIcon: Icon(Icons.person),
               label: 'Profile',

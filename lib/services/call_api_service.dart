@@ -3,6 +3,7 @@ import 'package:connect/core/constants/api_constants.dart';
 import 'package:connect/core/config/retry_config.dart';
 import 'package:connect/models/api_response.dart';
 import 'package:connect/models/call_session.dart';
+import 'package:connect/models/call_settlement.dart';
 import 'dart:developer' as developer;
 
 class CallApiService {
@@ -77,6 +78,46 @@ class CallApiService {
       return apiResponse.data ?? [];
     } catch (error) {
       developer.log('Error fetching call history: $error',
+          name: 'CallApiService');
+      rethrow;
+    }
+  }
+
+  Future<ApiResponse<List<CallSettlement>>> getCallSettlements(
+      {String? nextCursor}) async {
+    try {
+      final response = await _apiClient.get(
+        ApiConstants.callSettlements,
+        // queryParameters: nextCursor != null ? {'nextCursor': nextCursor} : null,
+      );
+
+      final apiResponse = ApiResponse.fromJson(
+        response.data,
+        (json) {
+          return (json as List).map((e) => CallSettlement.fromJson(e)).toList();
+        },
+      );
+
+      return apiResponse;
+    } catch (error) {
+      developer.log('Error fetching call settlements: $error',
+          name: 'CallApiService');
+      rethrow;
+    }
+  }
+
+  Future<ApiResponse<void>> createSettlement(String callSessionId) async {
+    try {
+      final response = await _apiClient.post(
+        '/connect/app/api/v1/call/settlement/$callSessionId',
+      );
+
+      return ApiResponse<void>.fromJson(
+        response.data,
+        (json) => null,
+      );
+    } catch (error) {
+      developer.log('Error creating settlement: $error',
           name: 'CallApiService');
       rethrow;
     }

@@ -4,6 +4,7 @@ class Expert {
   final String displayName;
   final String? photoUrl;
   final String gender;
+  final String? dob;
   final int age;
   final List<String> expertiseTags;
   final List<String> languages;
@@ -22,6 +23,7 @@ class Expert {
     required this.displayName,
     this.photoUrl,
     required this.gender,
+    this.dob,
     required this.age,
     required this.expertiseTags,
     required this.languages,
@@ -42,6 +44,7 @@ class Expert {
       displayName: json['displayName'] ?? '',
       photoUrl: json['photoUrl'],
       gender: json['gender'] ?? '',
+      dob: json['dob'],
       age: json['age'] ?? 0,
       expertiseTags: List<String>.from(json['expertiseTags'] ?? []),
       languages: List<String>.from(json['languages'] ?? []),

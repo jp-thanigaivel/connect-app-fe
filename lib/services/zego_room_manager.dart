@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:zego_uikit/zego_uikit.dart';
 import 'package:connect/services/call_heartbeat_manager.dart';
 import 'package:connect/services/user_heartbeat_manager.dart';
-import 'package:connect/main.dart';
+import 'package:connect/globals/navigator_key.dart';
 import 'dart:developer' as developer;
 
 class ZegoRoomManager {
@@ -66,11 +66,22 @@ class ZegoRoomManager {
         CallHeartbeatManager.instance.stop();
         UserHeartbeatManager.instance.setOnline();
 
-        if (state.reason == ZegoRoomStateChangedReason.KickOut) {
+        if (state.reason == ZegoRoomStateChangedReason.KickOut ||
+            state.reason == ZegoRoomStateChangedReason.ReconnectFailed) {
           developer.log(
-              'User was kicked out, forcing navigator pop via global key',
+              'Call ended due to ${state.reason}, forcing navigation to Home in 500ms',
               name: 'ZegoRoomManager');
-          _forcePopCallUI();
+
+          // Delay to allow Zego to attempt its own cleanup first/avoid race conditions
+          // But ensure we eventually get to Home
+          Future.delayed(const Duration(milliseconds: 500), () {
+            _forcePopCallUI();
+          });
+        } else if (state.reason == ZegoRoomStateChangedReason.Logout) {
+          developer.log(
+              'Call ended normally (Logout), letting Zego handle navigation',
+              name: 'ZegoRoomManager');
+          // Do NOT force pop for normal logout to avoid double-pop assertion errors on Caller
         }
       }
     };
@@ -81,23 +92,21 @@ class ZegoRoomManager {
   void _forcePopCallUI() {
     try {
       final context = navigatorKey.currentState?.context;
+      developer.log(
+          'Attempting to force nav to Home. NavigatorState: ${navigatorKey.currentState}, Context: $context',
+          name: 'ZegoRoomManager');
+
       if (context != null) {
-        final navigator = Navigator.of(context);
-        if (navigator.canPop()) {
-          developer.log('Popping call UI from global context',
-              name: 'ZegoRoomManager');
-          navigator.pop();
-        } else {
-          developer.log(
-              'Navigator cannot pop - already at root or specialized state',
-              name: 'ZegoRoomManager');
-        }
+        navigatorKey.currentState?.pushNamedAndRemoveUntil(
+          'HomePage',
+          (route) => false,
+        );
       } else {
-        developer.log('Global context is null, cannot pop',
+        developer.log('Global context is null, cannot navigate',
             name: 'ZegoRoomManager');
       }
     } catch (e) {
-      developer.log('Error during force pop: $e', name: 'ZegoRoomManager');
+      developer.log('Error during force nav: $e', name: 'ZegoRoomManager');
     }
   }
 

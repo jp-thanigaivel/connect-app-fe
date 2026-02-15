@@ -226,96 +226,55 @@ class _ProfilePageState extends State<ProfilePage> {
                           child: Column(
                             children: [
                               // Profile Photo with Edit Icon
-                              Stack(
-                                children: [
-                                  Container(
-                                    width: 100,
-                                    height: 100,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          Theme.of(context).colorScheme.primary,
-                                          Theme.of(context)
-                                              .colorScheme
-                                              .secondary,
-                                        ],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                              .withValues(alpha: 0.3),
-                                          blurRadius: 20,
-                                          offset: const Offset(0, 10),
-                                        ),
-                                      ],
+                              Container(
+                                width: 100,
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Theme.of(context).colorScheme.primary,
+                                      Theme.of(context).colorScheme.secondary,
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary
+                                          .withValues(alpha: 0.3),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 10),
                                     ),
-                                    child: _userProfile?.photoUrl != null &&
-                                            _userProfile!.photoUrl.isNotEmpty
-                                        ? ClipRRect(
-                                            borderRadius:
-                                                BorderRadius.circular(50),
-                                            child: Image.network(
-                                              _userProfile!.photoUrl,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (context, error,
-                                                      stackTrace) =>
+                                  ],
+                                ),
+                                child: _userProfile?.photoUrl != null &&
+                                        _userProfile!.photoUrl.isNotEmpty
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(50),
+                                        child: Image.network(
+                                          '${_userProfile!.photoUrl}${_userProfile!.photoUrl.contains('?') ? '&' : '?'}v=${DateTime.now().millisecondsSinceEpoch}',
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (context, error, stackTrace) =>
                                                   Icon(
-                                                Icons.person,
-                                                size: 50,
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .onPrimary,
-                                              ),
-                                            ),
-                                          )
-                                        : Icon(
                                             Icons.person,
                                             size: 50,
                                             color: Theme.of(context)
                                                 .colorScheme
                                                 .onPrimary,
                                           ),
-                                  ),
-                                  Positioned(
-                                    bottom: 0,
-                                    right: 0,
-                                    child: Container(
-                                      width: 32,
-                                      height: 32,
-                                      decoration: BoxDecoration(
+                                        ),
+                                      )
+                                    : Icon(
+                                        Icons.person,
+                                        size: 50,
                                         color: Theme.of(context)
                                             .colorScheme
-                                            .primaryContainer,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .surfaceContainerLowest,
-                                          width: 3,
-                                        ),
+                                            .onPrimary,
                                       ),
-                                      child: IconButton(
-                                        onPressed: () {
-                                          UiUtils.showInfoSnackBar(
-                                              'Edit photo coming soon!');
-                                        },
-                                        icon: Icon(
-                                          Icons.edit,
-                                          size: 14,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onPrimaryContainer,
-                                        ),
-                                        padding: EdgeInsets.zero,
-                                      ),
-                                    ),
-                                  ),
-                                ],
                               ),
                               const SizedBox(height: 20),
                               // Name
@@ -398,18 +357,20 @@ class _ProfilePageState extends State<ProfilePage> {
                                       },
                                     ),
                                   ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: _ActionButton(
-                                      icon:
-                                          Icons.account_balance_wallet_outlined,
-                                      label: 'Add ${CurrencyConfig.coinName}',
-                                      onPressed: () {
-                                        if (_userProfile == null) return;
-                                        _showAddBalanceDialog(context);
-                                      },
+                                  if (_userProfile?.userType != 'EXPERT') ...[
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: _ActionButton(
+                                        icon: Icons
+                                            .account_balance_wallet_outlined,
+                                        label: 'Add ${CurrencyConfig.coinName}',
+                                        onPressed: () {
+                                          if (_userProfile == null) return;
+                                          _showAddBalanceDialog(context);
+                                        },
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ],
                               ),
                             ],
@@ -450,45 +411,51 @@ class _ProfilePageState extends State<ProfilePage> {
                                   },
                                 ),
                               ),
-                              Container(
-                                width: 1,
-                                height: 40,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant
-                                    .withValues(alpha: 0.2),
-                              ),
-                              Expanded(
-                                child: _StatItem(
-                                  label: 'Balance',
-                                  value: _walletBalance?.formattedBalance ??
-                                      '${CurrencyConfig.coinIconText}0',
-                                  context: context,
-                                  onTap: () => _showAddBalanceDialog(context),
+                              if (_userProfile?.userType != 'EXPERT') ...[
+                                Container(
+                                  width: 1,
+                                  height: 40,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant
+                                      .withValues(alpha: 0.2),
                                 ),
-                              ),
+                                Expanded(
+                                  child: _StatItem(
+                                    label: 'Balance',
+                                    value: _walletBalance?.formattedBalance ??
+                                        '${CurrencyConfig.coinIconText}0',
+                                    context: context,
+                                    onTap: () => _showAddBalanceDialog(context),
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
                         const SizedBox(height: 24),
                         // Menu Items
-                        MenuItem(
-                          icon: Icons.receipt_long_outlined,
-                          label: 'Transactions',
-                          onTap: () {
-                            Navigator.pushNamed(context, 'PaymentHistoryPage');
-                          },
-                        ),
+                        if (_userProfile?.userType != 'EXPERT') ...[
+                          MenuItem(
+                            icon: Icons.receipt_long_outlined,
+                            label: 'Transactions',
+                            onTap: () {
+                              Navigator.pushNamed(
+                                  context, 'PaymentHistoryPage');
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                         const SizedBox(height: 12),
-                        MenuItem(
-                          icon: Icons.language_outlined,
-                          label: 'Change Language',
-                          onTap: () {
-                            Navigator.pushNamed(
-                                context, 'PreferredLanguagePage');
-                          },
-                        ),
-                        const SizedBox(height: 12),
+                        // MenuItem(
+                        //   icon: Icons.language_outlined,
+                        //   label: 'Change Language',
+                        //   onTap: () {
+                        //     Navigator.pushNamed(
+                        //         context, 'PreferredLanguagePage');
+                        //   },
+                        // ),
+                        // const SizedBox(height: 12),
                         MenuItem(
                           icon: Icons.support_agent_outlined,
                           label: 'Support',

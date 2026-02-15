@@ -56,7 +56,7 @@ class UserCard extends StatelessWidget {
                           clipBehavior: Clip.antiAlias,
                           child: expert.photoUrl != null
                               ? Image.network(
-                                  expert.photoUrl!,
+                                  '${expert.photoUrl!}${expert.photoUrl!.contains('?') ? '&' : '?'}v=${DateTime.now().millisecondsSinceEpoch}',
                                   fit: BoxFit.cover,
                                   // Optimization: Downsample to save memory.
                                   // 200px is sufficient for a 64px avatar with 3x pixel density.
@@ -96,26 +96,32 @@ class UserCard extends StatelessWidget {
                                   ),
                                 ),
                         ),
-                        if (expert.isActive)
-                          Positioned(
-                            right: 0,
-                            bottom: 0,
-                            child: Container(
-                              width: 16,
-                              height: 16,
-                              decoration: BoxDecoration(
-                                color: expert.status == 'busy'
-                                    ? const Color(0xffef4444) // Red for busy
-                                    : const Color(
-                                        0xff10b981), // Green for online
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Theme.of(context).colorScheme.surface,
-                                  width: 2,
-                                ),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: 16,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              color: expert.status == 'busy'
+                                  ? const Color(0xffef4444) // Red for busy
+                                  : expert.status == 'online'
+                                      ? const Color(
+                                          0xff10b981) // Green for online
+                                      : Colors.grey, // Grey for offline
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.surface,
+                                width: 2,
                               ),
                             ),
+                            child: expert.status != 'online' &&
+                                    expert.status != 'busy'
+                                ? const Icon(Icons.close,
+                                    size: 10, color: Colors.white)
+                                : null,
                           ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -142,15 +148,31 @@ class UserCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        expert.displayName,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.onSurface,
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              expert.displayName,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                  ),
+                              overflow: TextOverflow.ellipsis,
                             ),
+                          ),
+                          if (expert.isVerified) ...[
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.verified,
+                              color: Colors.blue,
+                              size: 16,
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -242,20 +264,19 @@ class UserCard extends StatelessWidget {
                               .toList(),
                         ),
                       ),
-                    if (expert.status.toLowerCase() == 'online')
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: expert.isActive
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context)
-                                  .disabledColor
-                                  .withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: _buildCallButton(context),
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: expert.status == 'online'
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context)
+                                .disabledColor
+                                .withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
                       ),
+                      child: _buildCallButton(context),
+                    ),
                   ],
                 ),
               ],
@@ -267,7 +288,7 @@ class UserCard extends StatelessWidget {
   }
 
   Widget _buildCallButton(BuildContext context) {
-    if (!expert.isActive) {
+    if (expert.status != 'online') {
       return IconButton(
         onPressed: null,
         icon: Icon(

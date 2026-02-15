@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:connect/core/constants/api_constants.dart';
 import 'package:connect/core/api/token_manager.dart';
 import 'package:connect/core/config/retry_config.dart';
-import 'package:connect/main.dart'; // Import to access navigatorKey
+import 'package:connect/globals/navigator_key.dart'; // Import to access navigatorKey
 import 'package:flutter/material.dart'; // Import for SnackBar
 import 'package:connect/core/utils/ui_utils.dart';
 import 'dart:developer' as developer;

@@ -40,6 +40,7 @@ class CallSession {
   final DateTime? endTime;
   final DateTime? createdOn;
   final DateTime? lastBilledAt;
+  final String? settlementId;
 
   CallSession({
     required this.callSessionId,
@@ -55,6 +56,7 @@ class CallSession {
     this.endTime,
     this.createdOn,
     this.lastBilledAt,
+    this.settlementId,
   });
 
   factory CallSession.fromJson(Map<String, dynamic> json) {
@@ -90,6 +92,7 @@ class CallSession {
       lastBilledAt: horizon['lastBilledAt'] != null
           ? DateTime.tryParse(horizon['lastBilledAt'])
           : null,
+      settlementId: billing['settlementId'],
     );
   }
 

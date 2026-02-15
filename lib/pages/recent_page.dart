@@ -23,6 +23,7 @@ class _RecentPageState extends State<RecentPage> {
   List<CallSession> _recentCalls = [];
   bool _isLoading = true;
   String? _currentUserId;
+  String? _userType;
 
   @override
   void initState() {
@@ -35,6 +36,7 @@ class _RecentPageState extends State<RecentPage> {
     if (token != null) {
       _currentUserId = JwtUtils.getUserId(token);
     }
+    _userType = await TokenManager.getUserType();
     _fetchCallHistory();
   }
 
@@ -126,6 +128,20 @@ class _RecentPageState extends State<RecentPage> {
                       return _CallCard(
                         call: call,
                         currentUserId: _currentUserId,
+                        userType: _userType,
+                        onSettlementTriggered: () async {
+                          try {
+                            final response = await _callApiService
+                                .createSettlement(call.callSessionId);
+                            if (response.status.isSuccess) {
+                              UiUtils.showSuccessSnackBar(
+                                  response.status.statusDesc);
+                            }
+                            _fetchCallHistory();
+                          } catch (e) {
+                            // Error likely handled by global interceptor or logged
+                          }
+                        },
                       );
                     },
                   ),
@@ -137,8 +153,15 @@ class _RecentPageState extends State<RecentPage> {
 class _CallCard extends StatelessWidget {
   final CallSession call;
   final String? currentUserId;
+  final String? userType;
+  final VoidCallback onSettlementTriggered;
 
-  const _CallCard({required this.call, this.currentUserId});
+  const _CallCard({
+    required this.call,
+    this.currentUserId,
+    this.userType,
+    required this.onSettlementTriggered,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -231,7 +254,8 @@ class _CallCard extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              '- ${CurrencyConfig.formatAmount(totalCost, call.totalBilledAmount.currency)}',
+                              CurrencyConfig.formatAmount(
+                                  -totalCost, call.totalBilledAmount.currency),
                               style: Theme.of(context)
                                   .textTheme
                                   .bodySmall
@@ -253,6 +277,23 @@ class _CallCard extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                       ),
                 ),
+                if (userType == 'EXPERT' &&
+                    call.settlementId == null &&
+                    (call.status == CallSessionStatusEnum.ended ||
+                        call.status == CallSessionStatusEnum.endInitiated)) ...[
+                  const SizedBox(width: 12),
+                  IconButton(
+                    onPressed: onSettlementTriggered,
+                    icon: Icon(
+                      Icons.account_balance_wallet_outlined,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    tooltip: 'Trigger Settlement',
+                  ),
+                ],
               ],
             ),
           ),
@@ -297,7 +338,8 @@ class _CallCard extends StatelessWidget {
             if (call.totalBilledAmount.price > 0) ...[
               const SizedBox(height: 16),
               Text(
-                '- ${CurrencyConfig.formatAmount(call.totalBilledAmount.price, call.totalBilledAmount.currency)}',
+                CurrencyConfig.formatAmount(-call.totalBilledAmount.price,
+                    call.totalBilledAmount.currency),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w900,
                       color: Theme.of(context).colorScheme.error,
