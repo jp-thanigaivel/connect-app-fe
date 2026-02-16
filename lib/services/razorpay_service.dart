@@ -73,11 +73,13 @@ class RazorpayService {
     required String description,
     required UserProfile userProfile,
     required String razorpayKey,
+    String? promotionCode,
   }) async {
     try {
       // 1. Create order on backend
-      final orderResponse =
-          await _paymentApiService.createOrder(amount, currency, description);
+      final orderResponse = await _paymentApiService.createOrder(
+          amount, currency, description,
+          promotionCode: promotionCode);
 
       if (!orderResponse.status.isSuccess || orderResponse.data == null) {
         throw Exception(

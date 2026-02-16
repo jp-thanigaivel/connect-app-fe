@@ -1,6 +1,6 @@
 class ApiConstants {
   static String get baseUrl => 'https://backend.iwoodtechnologies.com';
-  //static String get baseUrl => 'http://10.0.2.2:8000';
+  // static String get baseUrl => 'http://10.0.2.2:8000';
   static const String googleSignIn = '/connect/app/api/v1/auth/google-signin';
   static const String zegoTokenRefresh = '/connect/app/api/v1/auth/zego-token';
   static const String heartbeat = '/connect/app/api/v1/auth/heartbeat';
@@ -30,4 +30,5 @@ class ApiConstants {
   static const bool enableAdminLogin = false;
   static const String adminPhone = '9876543210';
   static const String adminPassword = '';
+  static const String promotion = '/connect/app/api/v1/promotion';
 }

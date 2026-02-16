@@ -8,6 +8,11 @@ import 'package:connect/models/expert.dart';
 import 'package:connect/models/wallet_balance.dart';
 import 'package:connect/core/config/currency_config.dart';
 import 'package:connect/models/search_config.dart';
+import 'package:connect/models/promotion.dart';
+import 'package:connect/services/promotion_api_service.dart';
+import 'package:connect/components/promotion_popup.dart';
+import 'package:connect/components/promotion_carousel.dart';
+import 'package:connect/core/api/token_manager.dart';
 import 'dart:developer' as developer;
 
 @NowaGenerated()
@@ -34,6 +39,8 @@ class _UsersLandingPageState extends State<UsersLandingPage> {
   String _errorMessage = '';
   String? _nextCursor;
   bool _showBackToTop = false;
+  List<Promotion> _promotions = [];
+  String? _userType;
 
   // Dynamic Filter State
   // Map<filterKey, selectedValue(s)>
@@ -42,8 +49,21 @@ class _UsersLandingPageState extends State<UsersLandingPage> {
   @override
   void initState() {
     super.initState();
+    _initUserType();
     _initData();
     _scrollController.addListener(_scrollListener);
+  }
+
+  Future<void> _initUserType() async {
+    final userType = await TokenManager.getUserType();
+    if (mounted) {
+      setState(() {
+        _userType = userType;
+      });
+      if (userType == 'ENDUSER' || userType != 'EXPERT') {
+        _fetchPromotions();
+      } else {}
+    }
   }
 
   Future<void> _initData() async {
@@ -175,6 +195,40 @@ class _UsersLandingPageState extends State<UsersLandingPage> {
       developer.log('Error fetching wallet balance in UsersLandingPage: $e',
           name: 'UsersLandingPage');
     }
+  }
+
+  Future<void> _fetchPromotions() async {
+    try {
+      final promotionApiService = PromotionApiService();
+      final response = await promotionApiService.getPromotions();
+
+      if (mounted && response.status.isSuccess && response.data != null) {
+        setState(() {
+          _promotions = response.data!;
+        });
+        // Show promotion popup if there are promotions and user is an end user
+        if (mounted && (_userType == 'ENDUSER' || _userType != 'EXPERT')) {
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              PromotionPopup.show(
+                context,
+                _promotions,
+                (promo) {
+                  Navigator.pushNamed(
+                    context,
+                    'ProfilePage',
+                    arguments: {
+                      'autoOpenRecharge': true,
+                      'promotion': promo,
+                    },
+                  );
+                },
+              );
+            }
+          });
+        }
+      } else {}
+    } catch (e) {}
   }
 
   List<Expert> get filteredAndSortedExperts {
@@ -399,9 +453,28 @@ class _UsersLandingPageState extends State<UsersLandingPage> {
         onRefresh: () async {
           await _fetchSearchConfig();
           await _fetchExperts();
+          if (_userType == 'ENDUSER' || _userType != 'EXPERT') {
+            await _fetchPromotions();
+          }
         },
         child: Column(
           children: [
+            if (_promotions.isNotEmpty &&
+                (_userType == 'ENDUSER' || _userType != 'EXPERT'))
+              PromotionCarousel(
+                promotions: _promotions,
+                isCompact: true,
+                onTap: (promo) {
+                  Navigator.pushNamed(
+                    context,
+                    'ProfilePage',
+                    arguments: {
+                      'autoOpenRecharge': true,
+                      'promotion': promo,
+                    },
+                  );
+                },
+              ),
             if (activeFilterChips.isNotEmpty)
               Container(
                 padding:

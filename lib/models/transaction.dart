@@ -16,6 +16,8 @@ class Transaction {
   final String creditedCurrency;
   final double creditedUnit;
   final String creditedUnitCurrency;
+  final double? discountAmount;
+  final String? discountCurrency;
   final double? conversionRate;
   final String description;
   final Map<String, dynamic>? gatewayResponse;
@@ -36,6 +38,8 @@ class Transaction {
     required this.creditedCurrency,
     required this.creditedUnit,
     required this.creditedUnitCurrency,
+    this.discountAmount,
+    this.discountCurrency,
     this.conversionRate,
     this.description = '',
     this.gatewayResponse,
@@ -46,6 +50,7 @@ class Transaction {
     final requestedUnitData = json['requestedUnit'] as Map<String, dynamic>?;
     final creditedAmountData = json['creditedAmount'] as Map<String, dynamic>?;
     final creditedUnitData = json['creditedUnit'] as Map<String, dynamic>?;
+    final discountAmountData = json['discountAmount'] as Map<String, dynamic>?;
 
     return Transaction(
       id: json['_id'] ?? '',
@@ -63,6 +68,10 @@ class Transaction {
       creditedCurrency: creditedAmountData?['currency'] ?? 'INR',
       creditedUnit: (creditedUnitData?['price'] ?? 0.0).toDouble(),
       creditedUnitCurrency: creditedUnitData?['currency'] ?? 'COIN',
+      discountAmount: discountAmountData != null
+          ? (discountAmountData['price'] as num).toDouble()
+          : null,
+      discountCurrency: discountAmountData?['currency'],
       conversionRate: (json['conversionRate'] as num?)?.toDouble(),
       description: json['description'] ?? '',
       gatewayResponse: json['gatewayResponse'],
@@ -85,6 +94,15 @@ class Transaction {
       CurrencyConfig.formatAmount(creditedAmount, creditedCurrency);
   String get formattedCreditedUnit =>
       CurrencyConfig.formatAmount(creditedUnit, creditedUnitCurrency);
+
+  String get formattedDiscountAmount {
+    if (discountAmount == null || discountAmount! <= 0) return '';
+    final currency = discountCurrency ?? 'INR';
+    final symbol = CurrencyConfig.getSymbol(currency);
+    return currency.toUpperCase() == 'COIN'
+        ? '$symbol -${discountAmount!.toStringAsFixed(0)}'
+        : '$symbol -${discountAmount!.toStringAsFixed(2)}';
+  }
 
   // Backward compatibility for UI
   String get currencySymbol => requestedUnitCurrencySymbol;

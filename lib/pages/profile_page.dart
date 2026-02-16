@@ -5,6 +5,7 @@ import 'package:connect/components/menu_item.dart';
 import 'package:connect/components/bottom_sheet_wrapper.dart';
 import 'package:connect/services/user_api_service.dart';
 import 'package:connect/models/user_profile.dart';
+import 'package:connect/models/promotion.dart';
 import 'package:connect/core/api/token_manager.dart';
 import 'package:connect/auth/google_auth_service.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
@@ -36,6 +37,7 @@ class _ProfilePageState extends State<ProfilePage> {
   double _conversionRate = 50.0; // Default if API fails
   bool _isLoading = true;
   bool _isPaymentProcessing = false;
+  bool _hasAutoOpenedRecharge = false;
   late RazorpayService _razorpayService;
 
   @override
@@ -108,6 +110,20 @@ class _ProfilePageState extends State<ProfilePage> {
           _isLoading = false;
         });
         _fetchConversionRate();
+
+        // Handle auto-open recharge dialog
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_hasAutoOpenedRecharge) return;
+
+          final args = ModalRoute.of(context)?.settings.arguments;
+          if (args is Map<String, dynamic> &&
+              args['autoOpenRecharge'] == true) {
+            _hasAutoOpenedRecharge = true;
+            // Retrieve promotion if available
+            final promotion = args['promotion'] as Promotion?;
+            _showAddBalanceDialog(context, promotion: promotion);
+          }
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -561,7 +577,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  void _showAddBalanceDialog(BuildContext context) {
+  void _showAddBalanceDialog(BuildContext context, {Promotion? promotion}) {
     final TextEditingController amountController =
         TextEditingController(text: '100');
     final List<int> quickAmounts = [50, 100, 500, 1000];
@@ -570,8 +586,21 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setSheetState) => BottomSheetWrapper(
+      builder: (context) => StatefulBuilder(builder: (context, setSheetState) {
+        double? discountAmount;
+        double? finalAmount;
+
+        final currentAmount = double.tryParse(amountController.text) ?? 0;
+        if (promotion != null &&
+            promotion.reward.type == 'PERCENTAGE_DISCOUNT') {
+          // Calculate discount amount based on percentage
+          // reward.value is the percentage (e.g., 30 for 30%)
+          double percentage = promotion.reward.value;
+          discountAmount = (currentAmount * percentage) / 100;
+          finalAmount = currentAmount - discountAmount!;
+        }
+
+        return BottomSheetWrapper(
           title: 'Add ${CurrencyConfig.coinName}',
           footer: SizedBox(
             width: double.infinity,
@@ -586,14 +615,29 @@ class _ProfilePageState extends State<ProfilePage> {
                 setState(() {
                   _isPaymentProcessing = true;
                 });
+
+                // Use final discounted amount if available, otherwise original amount
+                // But wait, the API expects the original amount and applies discount?
+                // OR does it expect the discounted amount?
+                // Based on "requestAmount remains unchanged, with discounts applied to the gateway amount"
+                // We should send the ORIGINAL amount and the promotion code.
+                // The gateway will handle the discount.
+                // BUT for the UI, we show the user what they will pay.
+                // Razorpay openCheckout takes 'amount'.
+                // If the backend creates an order with a discount, the order.amount returned
+                // from createOrder should be the discounted amount.
+                // So we pass the requested amount (e.g. 100) to createOrder.
+
                 _razorpayService
                     .openCheckout(
-                  amount: amount,
+                  amount: amount, // Send original amount
                   currency: 'COIN',
                   name: 'Connect App',
                   description: 'Add ${CurrencyConfig.coinName} to wallet',
                   userProfile: _userProfile!,
                   razorpayKey: ApiConstants.razorpayKey,
+                  promotionCode:
+                      promotion?.promotionCode, // Pass promotion code
                 )
                     .catchError((e) {
                   if (mounted) {
@@ -613,7 +657,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 elevation: 0,
               ),
-              child: const Text(
+              child: Text(
                 'Proceed to Pay',
                 style: TextStyle(
                   fontSize: 16,
@@ -626,13 +670,6 @@ class _ProfilePageState extends State<ProfilePage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Recharge your wallet to connect with experts',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                textAlign: TextAlign.center,
-              ),
               const SizedBox(height: 32),
 
               // Quick Amounts
@@ -644,11 +681,15 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
               ),
               const SizedBox(height: 12),
-              Row(
-                children: quickAmounts.map((amount) {
-                  return Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 8),
+              LayoutBuilder(builder: (context, constraints) {
+                return Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: quickAmounts.map((amount) {
+                    final width = (constraints.maxWidth - 8) / 2;
+
+                    return SizedBox(
+                      width: width,
                       child: InkWell(
                         onTap: () {
                           setSheetState(() {
@@ -660,7 +701,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         },
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 8),
                           decoration: BoxDecoration(
                             color: Theme.of(context)
                                 .colorScheme
@@ -674,24 +716,30 @@ class _ProfilePageState extends State<ProfilePage> {
                                   .withValues(alpha: 0.1),
                             ),
                           ),
-                          child: Text(
-                            '+$amount',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '+$amount',
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
+                                    ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                    ),
-                  );
-                }).toList(),
-              ),
+                    );
+                  }).toList(),
+                );
+              }),
               const SizedBox(height: 24),
 
               // Custom Amount Input
@@ -754,8 +802,24 @@ class _ProfilePageState extends State<ProfilePage> {
                   setSheetState(() {});
                 },
               ),
+              if (promotion != null &&
+                  discountAmount != null &&
+                  discountAmount! > 0) ...[
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '🎉 ${promotion.reward.value.toStringAsFixed(0)}% Offer Applied!',
+                    style: TextStyle(
+                      color: Colors.green[700],
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
 
-              // Conversion Info
+              // Conversion Info with Discount
               if (_conversionRate > 0) ...[
                 const SizedBox(height: 16),
                 Container(
@@ -765,29 +829,87 @@ class _ProfilePageState extends State<ProfilePage> {
                     color: Theme.of(context)
                         .colorScheme
                         .primaryContainer
-                        .withValues(alpha: 0.3),
+                        .withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
+                    border: promotion != null
+                        ? Border.all(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.3))
+                        : null,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        '1 INR = ${_conversionRate.toStringAsFixed(0)} ${CurrencyConfig.coinName}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '1 INR = ${_conversionRate.toStringAsFixed(0)} ${CurrencyConfig.coinName}',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                          ),
+                        ],
                       ),
                       Builder(
                         builder: (context) {
-                          final coinAmount =
-                              double.tryParse(amountController.text) ?? 0.0;
-                          final inrEquivalent = coinAmount / _conversionRate;
+                          // Already calculated in the build method state
+                          final currentCoin =
+                              double.tryParse(amountController.text) ?? 0;
+                          final originalInr = currentCoin / _conversionRate;
+
+                          if (finalAmount != null &&
+                              finalAmount! > 0 &&
+                              discountAmount != null) {
+                            // finalAmount is in COINS from previous logic?
+                            // Wait, logic above:
+                            // discountAmount = (currentAmount * percentage) / 100; (COINS)
+                            // finalAmount = currentAmount - discountAmount!; (COINS)
+
+                            // We need to show price in INR.
+                            final finalInr = finalAmount! / _conversionRate;
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '₹${originalInr.toStringAsFixed(2)}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        decoration: TextDecoration.lineThrough,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                      ),
+                                ),
+                                Text(
+                                  'Pay: ₹${finalInr.toStringAsFixed(2)}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                      ),
+                                ),
+                              ],
+                            );
+                          }
+
                           return Text(
-                            'Pay: ₹${inrEquivalent.toStringAsFixed(2)}',
+                            'Pay: ₹${originalInr.toStringAsFixed(2)}',
                             style: Theme.of(context)
                                 .textTheme
-                                .titleSmall
+                                .titleMedium
                                 ?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: Theme.of(context).colorScheme.primary,
@@ -802,8 +924,8 @@ class _ProfilePageState extends State<ProfilePage> {
               const SizedBox(height: 24),
             ],
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 }

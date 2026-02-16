@@ -470,6 +470,15 @@ class _TransactionCard extends StatelessWidget {
                     context: context,
                   ),
                   const Divider(height: 32),
+                  if (transaction.discountAmount != null &&
+                      transaction.discountAmount! > 0) ...[
+                    _DetailRow(
+                      label: 'Discount Amount',
+                      value: transaction.formattedDiscountAmount,
+                      context: context,
+                    ),
+                    const Divider(height: 32),
+                  ],
                   if (transaction.conversionRate != null) ...[
                     _DetailRow(
                       label: 'Conversion Rate',
@@ -485,7 +494,7 @@ class _TransactionCard extends StatelessWidget {
                   ),
                   const Divider(height: 32),
                   _DetailRow(
-                    label: 'Credited Amount',
+                    label: 'Paid Amount',
                     value: transaction.formattedCreditedAmount,
                     context: context,
                   ),

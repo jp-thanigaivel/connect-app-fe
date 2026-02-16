@@ -12,6 +12,7 @@ import 'package:connect/services/user_heartbeat_manager.dart';
 import 'package:connect/core/constants/api_constants.dart';
 import 'package:connect/services/zego_room_manager.dart';
 import 'package:connect/core/utils/ui_utils.dart';
+import 'package:connect/components/promotion_popup.dart';
 import 'dart:developer' as developer;
 
 @NowaGenerated()
@@ -78,6 +79,7 @@ class _LoginPageState extends State<LoginPage> {
           developer.log('Zego service initialized. Waiting for connection...',
               name: 'LoginPage');
 
+          PromotionPopup.resetShownFlag();
           if (mounted) {
             Navigator.pushReplacementNamed(context, 'HomePage');
           }
@@ -175,6 +177,8 @@ class _LoginPageState extends State<LoginPage> {
               name: 'LoginPage');
         }
 
+        PromotionPopup.resetShownFlag();
+
         if (mounted) {
           Navigator.pushReplacementNamed(context, 'HomePage');
         }
@@ -221,6 +225,7 @@ class _LoginPageState extends State<LoginPage> {
           // Initialize persistent room state monitoring
           ZegoRoomManager.instance.init();
 
+          PromotionPopup.resetShownFlag();
           if (mounted) {
             Navigator.pushReplacementNamed(context, 'HomePage');
           }

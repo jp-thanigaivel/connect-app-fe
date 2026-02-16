@@ -25,19 +25,26 @@ class PaymentApiService {
   }
 
   Future<ApiResponse<PaymentOrder>> createOrder(
-      double amount, String currency, String description) async {
+      double amount, String currency, String description,
+      {String? promotionCode}) async {
     try {
+      final Map<String, dynamic> data = {
+        'requestAmount': {
+          'price': amount.toInt() == amount
+              ? amount.toInt().toString()
+              : amount.toString(),
+          'currency': currency,
+        },
+        'description': description,
+      };
+
+      if (promotionCode != null) {
+        data['promotionCode'] = promotionCode;
+      }
+
       final response = await _apiClient.post(
         ApiConstants.createOrder,
-        data: {
-          'requestAmount': {
-            'price': amount.toInt() == amount
-                ? amount.toInt().toString()
-                : amount.toString(),
-            'currency': currency,
-          },
-          'description': description,
-        },
+        data: data,
       );
 
       return ApiResponse<PaymentOrder>.fromJson(
