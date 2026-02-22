@@ -1,3 +1,4 @@
+import 'package:connect/core/api/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 
@@ -88,7 +89,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
       }
     } catch (e) {
       if (mounted) {
-        UiUtils.showErrorSnackBar('Error: $e');
+        final errorMessage = ApiClient.getErrorMessage(e);
+        UiUtils.showErrorSnackBar(errorMessage);
       }
     } finally {
       if (mounted) {

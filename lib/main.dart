@@ -19,6 +19,8 @@ import 'package:connect/models/support_ticket.dart';
 import 'package:connect/pages/expert_details_page.dart';
 import 'package:connect/services/user_heartbeat_manager.dart';
 import 'package:connect/services/call_heartbeat_manager.dart';
+import 'package:connect/services/notification_service.dart';
+import 'package:connect/services/call_limit_manager.dart';
 import 'dart:developer' as developer;
 
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
@@ -35,6 +37,9 @@ late final SharedPreferences sharedPrefs;
 main() async {
   WidgetsFlutterBinding.ensureInitialized();
   sharedPrefs = await SharedPreferences.getInstance();
+
+  // Initialize notifications
+  await NotificationService.instance.init();
 
   /// 1.1.2: set navigator key to ZegoUIKitPrebuiltCallInvitationService
   ZegoUIKitPrebuiltCallInvitationService().setNavigatorKey(navigatorKey);
@@ -102,6 +107,95 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               ZegoUIKitPrebuiltCallMiniOverlayPage(
                 contextQuery: () {
                   return navigatorKey.currentState!.context;
+                },
+              ),
+              // Persistent Call Warning Banner
+              ValueListenableBuilder<String?>(
+                valueListenable: CallLimitManager.instance.bannerNotifier,
+                builder: (context, message, _) {
+                  if (message == null) return const SizedBox.shrink();
+
+                  return ValueListenableBuilder<Offset>(
+                    valueListenable:
+                        CallLimitManager.instance.bannerPositionNotifier,
+                    builder: (context, position, _) {
+                      return Positioned(
+                        top: position.dy,
+                        left: position.dx,
+                        right: 16, // Keep right margin for width
+                        child: GestureDetector(
+                          onPanUpdate: (details) {
+                            CallLimitManager.instance
+                                .updatePosition(details.delta);
+                          },
+                          child: Material(
+                            color: Colors.transparent,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.orangeAccent,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.warning_amber_rounded,
+                                      color: Colors.white, size: 20),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      message,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  TextButton(
+                                    onPressed: () => CallLimitManager.instance
+                                        .handleRechargeAction(),
+                                    style: TextButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: Colors.orange.shade900,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12),
+                                      minimumSize: const Size(0, 36),
+                                    ),
+                                    child: const Text('Add Coins',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12)),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  IconButton(
+                                    onPressed: () => CallLimitManager.instance
+                                        .dismissBanner(),
+                                    icon: const Icon(Icons.close,
+                                        color: Colors.white, size: 18),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
                 },
               ),
             ],

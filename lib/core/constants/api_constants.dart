@@ -13,6 +13,8 @@ class ApiConstants {
       '/connect/app/api/v1/payment/conversion-rate';
   static const String walletBalance = '/connect/app/api/v1/payment/wallet';
   static const String paymentHistory = '/connect/app/api/v1/payment/history';
+  static const String paymentSearchConfig =
+      '/connect/app/api/v1/payment/history/search-config';
   static const String initiateCall = '/connect/app/api/v1/call/initiate';
   static const String callHeartbeat = '/connect/app/api/v1/call/heartbeat';
   static const String callHistory = '/connect/app/api/v1/call/history';
@@ -31,4 +33,6 @@ class ApiConstants {
   static const String adminPhone = '9876543210';
   static const String adminPassword = '';
   static const String promotion = '/connect/app/api/v1/promotion';
+  static const String legalPolicies =
+      'https://connect.iwoodtechnologies.com/connect-app.html';
 }

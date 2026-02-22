@@ -3,7 +3,8 @@ import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:connect/components/menu_item.dart';
 import 'package:connect/globals/app_state.dart';
 import 'package:connect/globals/themes.dart';
-import 'package:connect/core/utils/ui_utils.dart';
+import 'package:connect/core/constants/api_constants.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 @NowaGenerated()
 class SettingsPage extends StatelessWidget {
@@ -102,7 +103,7 @@ class SettingsPage extends StatelessWidget {
             icon: Icons.description_outlined,
             label: 'Terms & Conditions',
             onTap: () {
-              Navigator.pushNamed(context, 'TermsConditionsPage');
+              launchUrl(Uri.parse(ApiConstants.legalPolicies));
             },
           ),
           const SizedBox(height: 12),
@@ -110,7 +111,7 @@ class SettingsPage extends StatelessWidget {
             icon: Icons.privacy_tip_outlined,
             label: 'Privacy Policy',
             onTap: () {
-              Navigator.pushNamed(context, 'PrivacyPolicyPage');
+              launchUrl(Uri.parse(ApiConstants.legalPolicies));
             },
           ),
           const SizedBox(height: 12),
@@ -118,7 +119,7 @@ class SettingsPage extends StatelessWidget {
             icon: Icons.help_outline,
             label: 'FAQs',
             onTap: () {
-              UiUtils.showInfoSnackBar('FAQs coming soon!');
+              launchUrl(Uri.parse(ApiConstants.legalPolicies));
             },
           ),
         ],

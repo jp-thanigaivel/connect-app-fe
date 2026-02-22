@@ -1,3 +1,4 @@
+import 'package:connect/core/api/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
@@ -586,346 +587,335 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(builder: (context, setSheetState) {
-        double? discountAmount;
-        double? finalAmount;
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            double? discountAmount;
+            double? finalAmount;
 
-        final currentAmount = double.tryParse(amountController.text) ?? 0;
-        if (promotion != null &&
-            promotion.reward.type == 'PERCENTAGE_DISCOUNT') {
-          // Calculate discount amount based on percentage
-          // reward.value is the percentage (e.g., 30 for 30%)
-          double percentage = promotion.reward.value;
-          discountAmount = (currentAmount * percentage) / 100;
-          finalAmount = currentAmount - discountAmount!;
-        }
+            final currentAmount = double.tryParse(amountController.text) ?? 0;
+            if (promotion != null &&
+                promotion.reward.type == 'PERCENTAGE_DISCOUNT') {
+              double percentage = promotion.reward.value;
+              discountAmount = (currentAmount * percentage) / 100;
+              finalAmount = currentAmount - discountAmount;
+            }
 
-        return BottomSheetWrapper(
-          title: 'Add ${CurrencyConfig.coinName}',
-          footer: SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                final amount = double.tryParse(amountController.text);
-                if (amount == null || amount <= 0) {
-                  UiUtils.showWarningSnackBar('Please enter a valid amount');
-                  return;
-                }
-                Navigator.pop(context);
-                setState(() {
-                  _isPaymentProcessing = true;
-                });
-
-                // Use final discounted amount if available, otherwise original amount
-                // But wait, the API expects the original amount and applies discount?
-                // OR does it expect the discounted amount?
-                // Based on "requestAmount remains unchanged, with discounts applied to the gateway amount"
-                // We should send the ORIGINAL amount and the promotion code.
-                // The gateway will handle the discount.
-                // BUT for the UI, we show the user what they will pay.
-                // Razorpay openCheckout takes 'amount'.
-                // If the backend creates an order with a discount, the order.amount returned
-                // from createOrder should be the discounted amount.
-                // So we pass the requested amount (e.g. 100) to createOrder.
-
-                _razorpayService
-                    .openCheckout(
-                  amount: amount, // Send original amount
-                  currency: 'COIN',
-                  name: 'Connect App',
-                  description: 'Add ${CurrencyConfig.coinName} to wallet',
-                  userProfile: _userProfile!,
-                  razorpayKey: ApiConstants.razorpayKey,
-                  promotionCode:
-                      promotion?.promotionCode, // Pass promotion code
-                )
-                    .catchError((e) {
-                  if (mounted) {
+            return BottomSheetWrapper(
+              title: 'Add ${CurrencyConfig.coinName}',
+              footer: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    final amount = double.tryParse(amountController.text);
+                    if (amount == null || amount <= 0) {
+                      UiUtils.showWarningSnackBar(
+                          'Please enter a valid amount');
+                      return;
+                    }
+                    Navigator.pop(context);
                     setState(() {
-                      _isPaymentProcessing = false;
+                      _isPaymentProcessing = true;
                     });
-                    UiUtils.showErrorSnackBar('Error starting payment: $e');
-                  }
-                });
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                'Proceed to Pay',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 32),
 
-              // Quick Amounts
-              Text(
-                'Quick Select (Tap to add)',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
+                    _razorpayService
+                        .openCheckout(
+                      amount: amount,
+                      currency: 'COIN',
+                      name: 'Connect App',
+                      description: 'Add ${CurrencyConfig.coinName} to wallet',
+                      userProfile: _userProfile!,
+                      razorpayKey: ApiConstants.razorpayKey,
+                      promotionCode: promotion?.promotionCode,
+                    )
+                        .catchError((e) {
+                      if (mounted) {
+                        setState(() {
+                          _isPaymentProcessing = false;
+                        });
+                        final errorMessage = ApiClient.getErrorMessage(e);
+                        UiUtils.showErrorSnackBar(errorMessage);
+                      }
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
-              ),
-              const SizedBox(height: 12),
-              LayoutBuilder(builder: (context, constraints) {
-                return Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: quickAmounts.map((amount) {
-                    final width = (constraints.maxWidth - 8) / 2;
-
-                    return SizedBox(
-                      width: width,
-                      child: InkWell(
-                        onTap: () {
-                          setSheetState(() {
-                            final current =
-                                int.tryParse(amountController.text) ?? 0;
-                            amountController.text =
-                                (current + amount).toString();
-                          });
-                        },
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 12, horizontal: 8),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .surfaceContainerHighest
-                                .withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .outline
-                                  .withValues(alpha: 0.1),
-                            ),
+                    elevation: 0,
+                  ),
+                  child: _isPaymentProcessing
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '+$amount',
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
-                                    ),
-                              ),
-                            ],
+                        )
+                      : const Text(
+                          'Proceed to Pay',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 32),
+                  Text(
+                    'Quick Select (Tap to add)',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  LayoutBuilder(builder: (context, constraints) {
+                    return Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: quickAmounts.map((amount) {
+                        final width = (constraints.maxWidth - 8) / 2;
+                        return SizedBox(
+                          width: width,
+                          child: InkWell(
+                            onTap: () {
+                              setSheetState(() {
+                                final current =
+                                    int.tryParse(amountController.text) ?? 0;
+                                amountController.text =
+                                    (current + amount).toString();
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 12, horizontal: 8),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest
+                                    .withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .outline
+                                      .withValues(alpha: 0.1),
+                                ),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '+$amount',
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
                     );
-                  }).toList(),
-                );
-              }),
-              const SizedBox(height: 24),
-
-              // Custom Amount Input
-              Text(
-                'Custom Amount',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: amountController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                decoration: InputDecoration(
-                  hintText: '0',
-                  prefixIcon: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      CurrencyConfig.coinIconText,
-                      style: const TextStyle(fontSize: 24),
-                    ),
+                  }),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Custom Amount',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                   ),
-                  filled: true,
-                  fillColor:
-                      Theme.of(context).colorScheme.surfaceContainerLowest,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .outline
-                          .withValues(alpha: 0.2),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: amountController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                    decoration: InputDecoration(
+                      hintText: '0',
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          CurrencyConfig.coinIconText,
+                          style: const TextStyle(fontSize: 24),
+                        ),
+                      ),
+                      filled: true,
+                      fillColor:
+                          Theme.of(context).colorScheme.surfaceContainerLowest,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .outline
+                              .withValues(alpha: 0.2),
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .outline
+                              .withValues(alpha: 0.2),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 20),
                     ),
+                    onChanged: (value) {
+                      setSheetState(() {});
+                    },
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .outline
-                          .withValues(alpha: 0.2),
+                  if (promotion != null &&
+                      discountAmount != null &&
+                      discountAmount > 0) ...[
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '🎉 ${promotion.reward.value.toStringAsFixed(0)}% Offer Applied!',
+                        style: TextStyle(
+                          color: Colors.green[700],
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
                     ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                ),
-                onChanged: (value) {
-                  setSheetState(() {});
-                },
-              ),
-              if (promotion != null &&
-                  discountAmount != null &&
-                  discountAmount! > 0) ...[
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '🎉 ${promotion.reward.value.toStringAsFixed(0)}% Offer Applied!',
-                    style: TextStyle(
-                      color: Colors.green[700],
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-
-              // Conversion Info with Discount
-              if (_conversionRate > 0) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primaryContainer
-                        .withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: promotion != null
-                        ? Border.all(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withValues(alpha: 0.3))
-                        : null,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  ],
+                  if (_conversionRate > 0) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primaryContainer
+                            .withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: promotion != null
+                            ? Border.all(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withValues(alpha: 0.3))
+                            : null,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            '1 INR = ${_conversionRate.toStringAsFixed(0)} ${CurrencyConfig.coinName}',
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '1 INR = ${_conversionRate.toStringAsFixed(0)} ${CurrencyConfig.coinName}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
                                       color: Theme.of(context)
                                           .colorScheme
                                           .onSurfaceVariant,
                                     ),
+                              ),
+                            ],
+                          ),
+                          Builder(
+                            builder: (context) {
+                              final currentCoin =
+                                  double.tryParse(amountController.text) ?? 0;
+                              final originalInr = currentCoin / _conversionRate;
+
+                              if (finalAmount != null &&
+                                  finalAmount > 0 &&
+                                  discountAmount != null) {
+                                final finalInr = finalAmount / _conversionRate;
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      '₹${originalInr.toStringAsFixed(2)}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            decoration:
+                                                TextDecoration.lineThrough,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
+                                    ),
+                                    Text(
+                                      'Pay: ₹${finalInr.toStringAsFixed(2)}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                          ),
+                                    ),
+                                  ],
+                                );
+                              }
+
+                              return Text(
+                                'Pay: ₹${originalInr.toStringAsFixed(2)}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                    ),
+                              );
+                            },
                           ),
                         ],
                       ),
-                      Builder(
-                        builder: (context) {
-                          // Already calculated in the build method state
-                          final currentCoin =
-                              double.tryParse(amountController.text) ?? 0;
-                          final originalInr = currentCoin / _conversionRate;
-
-                          if (finalAmount != null &&
-                              finalAmount! > 0 &&
-                              discountAmount != null) {
-                            // finalAmount is in COINS from previous logic?
-                            // Wait, logic above:
-                            // discountAmount = (currentAmount * percentage) / 100; (COINS)
-                            // finalAmount = currentAmount - discountAmount!; (COINS)
-
-                            // We need to show price in INR.
-                            final finalInr = finalAmount! / _conversionRate;
-
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  '₹${originalInr.toStringAsFixed(2)}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        decoration: TextDecoration.lineThrough,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant,
-                                      ),
-                                ),
-                                Text(
-                                  'Pay: ₹${finalInr.toStringAsFixed(2)}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                      ),
-                                ),
-                              ],
-                            );
-                          }
-
-                          return Text(
-                            'Pay: ₹${originalInr.toStringAsFixed(2)}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              const SizedBox(height: 24),
-            ],
-          ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                ],
+              ),
+            );
+          },
         );
-      }),
+      },
     );
   }
 }

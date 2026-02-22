@@ -1,3 +1,4 @@
+import 'package:connect/core/api/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
@@ -25,10 +26,17 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   bool _isLoadingMore = false;
   String? _nextCursor;
 
+  // Filter state
+  String? _selectedStatus;
+  DateTime? _startDate;
+  DateTime? _endDate;
+  List<Map<String, dynamic>> _statusOptions = [];
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_scrollListener);
+    _fetchSearchConfig();
     _fetchHistory();
   }
 
@@ -62,6 +70,9 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     try {
       final response = await _paymentApiService.getPaymentHistory(
         nextCursor: isLoadMore ? _nextCursor : null,
+        status: _selectedStatus,
+        startDate: _startDate,
+        endDate: _endDate,
       );
       if (mounted) {
         setState(() {
@@ -81,13 +92,288 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
           _isLoading = false;
           _isLoadingMore = false;
         });
-        UiUtils.showErrorSnackBar('Error fetching history: $e');
+        final errorMessage = ApiClient.getErrorMessage(e);
+        UiUtils.showErrorSnackBar(errorMessage);
       }
     }
   }
 
+  Future<void> _fetchSearchConfig() async {
+    try {
+      final response = await _paymentApiService.getPaymentSearchConfig();
+      if (mounted && response.data != null) {
+        final statusConfig = response.data!['filterConditions']?['status'];
+        if (statusConfig != null && statusConfig['allowedValues'] != null) {
+          setState(() {
+            _statusOptions =
+                List<Map<String, dynamic>>.from(statusConfig['allowedValues']);
+          });
+        }
+      }
+    } catch (e) {
+      // Silently fail config fetch
+    }
+  }
+
+  Widget _buildPopupSelectionBox({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
+              : Theme.of(context).colorScheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isSelected) ...[
+              Icon(
+                Icons.check_circle,
+                size: 18,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+            ],
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.onSurface,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          return BottomSheetWrapper(
+            title: 'Filters',
+            footer: Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () {
+                      setSheetState(() {
+                        _selectedStatus = null;
+                        _startDate = null;
+                        _endDate = null;
+                      });
+                    },
+                    child: const Text('Reset'),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _fetchHistory();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Apply Filters'),
+                  ),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 12),
+                Text(
+                  'Status',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    _buildPopupSelectionBox(
+                      label: 'All',
+                      isSelected: _selectedStatus == null,
+                      onTap: () {
+                        setSheetState(() => _selectedStatus = null);
+                      },
+                    ),
+                    ..._statusOptions.map((opt) {
+                      final value = opt['value'] as String;
+                      final display = opt['display'] as String;
+                      final isSelected = _selectedStatus == value;
+                      return _buildPopupSelectionBox(
+                        label: display,
+                        isSelected: isSelected,
+                        onTap: () {
+                          setSheetState(() {
+                            _selectedStatus = isSelected ? null : value;
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Date Range',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon:
+                            const Icon(Icons.calendar_today_rounded, size: 16),
+                        label: Text(_startDate == null
+                            ? 'Start Date'
+                            : _startDate!.toString().split(' ')[0]),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: _startDate ?? DateTime.now(),
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime.now(),
+                          );
+                          if (date != null) {
+                            setSheetState(() => _startDate = date);
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon:
+                            const Icon(Icons.calendar_today_rounded, size: 16),
+                        label: Text(_endDate == null
+                            ? 'End Date'
+                            : _endDate!.toString().split(' ')[0]),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: _endDate ?? DateTime.now(),
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime.now(),
+                          );
+                          if (date != null) {
+                            setSheetState(() => _endDate = DateTime(
+                                date.year, date.month, date.day, 23, 59, 59));
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, VoidCallback onDelete) {
+    return Chip(
+      label: Text(label),
+      deleteIcon: const Icon(Icons.close, size: 14),
+      onDeleted: onDelete,
+      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+      labelStyle: TextStyle(
+        color: Theme.of(context).colorScheme.onPrimaryContainer,
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final List<Widget> activeFilterChips = [];
+
+    if (_selectedStatus != null) {
+      final displayStatus = _statusOptions.firstWhere(
+        (opt) => opt['value'] == _selectedStatus,
+        orElse: () => {'display': _selectedStatus},
+      )['display'];
+      activeFilterChips.add(_buildFilterChip('Status: $displayStatus', () {
+        setState(() {
+          _selectedStatus = null;
+          _fetchHistory();
+        });
+      }));
+    }
+
+    if (_startDate != null || _endDate != null) {
+      String label = 'Date: ';
+      if (_startDate != null && _endDate != null) {
+        label +=
+            '${_startDate!.toString().split(' ')[0]} - ${_endDate!.toString().split(' ')[0]}';
+      } else if (_startDate != null) {
+        label += 'From ${_startDate!.toString().split(' ')[0]}';
+      } else {
+        label += 'Until ${_endDate!.toString().split(' ')[0]}';
+      }
+      activeFilterChips.add(_buildFilterChip(label, () {
+        setState(() {
+          _startDate = null;
+          _endDate = null;
+          _fetchHistory();
+        });
+      }));
+    }
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
@@ -99,90 +385,128 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
         ),
         title: Text(
           'Transactions',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.onSurface,
               ),
         ),
-        centerTitle: true,
+        centerTitle: false,
+        actions: [
+          Badge(
+            isLabelVisible: _selectedStatus != null ||
+                _startDate != null ||
+                _endDate != null,
+            child: IconButton(
+              icon: Icon(
+                Icons.tune,
+                color: (_selectedStatus != null ||
+                        _startDate != null ||
+                        _endDate != null)
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurface,
+              ),
+              onPressed: () => _showFilterSheet(),
+              tooltip: 'Filter',
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _transactions.isEmpty
-              ? RefreshIndicator(
-                  onRefresh: () => _fetchHistory(),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) => SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      child: ConstrainedBox(
-                        constraints:
-                            BoxConstraints(minHeight: constraints.maxHeight),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.receipt_long_rounded,
-                                size: 80,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant
-                                    .withValues(alpha: 0.2),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No transactions found',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w600,
+      body: Column(
+        children: [
+          if (activeFilterChips.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: activeFilterChips,
+                ),
+              ),
+            ),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _transactions.isEmpty
+                    ? RefreshIndicator(
+                        onRefresh: () => _fetchHistory(),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) =>
+                              SingleChildScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                  minHeight: constraints.maxHeight),
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.receipt_long_rounded,
+                                      size: 80,
                                       color: Theme.of(context)
                                           .colorScheme
-                                          .onSurfaceVariant,
+                                          .onSurfaceVariant
+                                          .withValues(alpha: 0.2),
                                     ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No transactions found',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    TextButton(
+                                      onPressed: () => _fetchHistory(),
+                                      child: const Text('Pull down to refresh'),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              const SizedBox(height: 8),
-                              TextButton(
-                                onPressed: () => _fetchHistory(),
-                                child: const Text('Pull down to refresh'),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: () => _fetchHistory(),
+                        child: ListView.separated(
+                          controller: _scrollController,
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                          itemCount: _transactions.length +
+                              (_nextCursor != null ? 1 : 0),
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            if (index == _transactions.length) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 20),
+                                child:
+                                    Center(child: CircularProgressIndicator()),
+                              );
+                            }
+
+                            final transaction = _transactions[index];
+                            return _TransactionCard(
+                              transaction: transaction,
+                              onRefresh: _fetchHistory,
+                              paymentApiService: _paymentApiService,
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: () => _fetchHistory(),
-                  child: ListView.separated(
-                    controller: _scrollController,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                    itemCount:
-                        _transactions.length + (_nextCursor != null ? 1 : 0),
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      if (index < _transactions.length) {
-                        final transaction = _transactions[index];
-                        return _TransactionCard(
-                          transaction: transaction,
-                          onRefresh: _fetchHistory,
-                          paymentApiService: _paymentApiService,
-                        );
-                      } else {
-                        return const Center(
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(vertical: 24),
-                            child: CircularProgressIndicator(),
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                ),
+          ),
+        ],
+      ),
     );
   }
 }

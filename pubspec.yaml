@@ -19,11 +19,14 @@ dependencies:
   dio: ^5.5.0+1
   zego_uikit_prebuilt_call: ^4.22.2
   zego_uikit_signaling_plugin: ^2.8.20
+  zego_zpns: ^2.6.2
   google_sign_in: ^6.2.1
   http: ^1.2.0
   jwt_decoder: ^2.0.1
   razorpay_flutter: 1.4.0
   image_picker: ^1.2.1
+  flutter_local_notifications: ^17.2.2
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
@@ -37,9 +40,12 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/app_icon.png"
   min_sdk_android: 21
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/app_icon.png"
 
 # The following section is specific to Flutter packages.
 flutter:
   uses-material-design: true
   assets:
     - assets/app_icon.png
+    - assets/app_logo.png

@@ -22,4 +22,17 @@ class JwtUtils {
       return null;
     }
   }
+
+  static bool isExpired(String token) {
+    try {
+      final decoded = decode(token);
+      final exp = decoded['exp'] as int?;
+      if (exp == null) return false;
+
+      final expirationDate = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+      return DateTime.now().isAfter(expirationDate);
+    } catch (e) {
+      return true; // Assume expired if decoding fails
+    }
+  }
 }

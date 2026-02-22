@@ -4,7 +4,10 @@ import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import 'package:connect/services/call_api_service.dart';
 import 'package:connect/services/call_heartbeat_manager.dart';
+import 'package:connect/services/payment_api_service.dart';
+import 'package:connect/services/call_limit_manager.dart';
 import 'package:connect/core/utils/ui_utils.dart';
+import 'package:connect/core/api/token_manager.dart';
 import 'package:connect/core/config/currency_config.dart';
 import 'dart:developer' as developer;
 
@@ -305,6 +308,24 @@ class UserCard extends StatelessWidget {
         try {
           if (context.mounted) {
             UiUtils.showInfoSnackBar('Initiating call...');
+          }
+
+          // Balance check and Call Limit initialization for ENDUSERs
+          final userType = await TokenManager.getUserType();
+          if (userType == 'ENDUSER') {
+            try {
+              final balanceResponse =
+                  await PaymentApiService().getWalletBalance();
+              if (balanceResponse.data != null) {
+                await CallLimitManager.instance.initCallLimit(
+                  balanceResponse.data!.balance.toDouble(),
+                  expert.pricePerMinute.price.toDouble(),
+                );
+              }
+            } catch (e) {
+              developer.log('Failed to fetch balance for call limit: $e',
+                  name: 'UserCard');
+            }
           }
 
           final callSessionId =

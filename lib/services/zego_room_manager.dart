@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:zego_uikit/zego_uikit.dart';
 import 'package:connect/services/call_heartbeat_manager.dart';
 import 'package:connect/services/user_heartbeat_manager.dart';
+import 'package:connect/services/call_limit_manager.dart';
 import 'package:connect/globals/navigator_key.dart';
 import 'dart:developer' as developer;
 
@@ -65,6 +66,7 @@ class ZegoRoomManager {
 
         CallHeartbeatManager.instance.stop();
         UserHeartbeatManager.instance.setOnline();
+        CallLimitManager.instance.reset(); // Reset call limit and remove banner
 
         if (state.reason == ZegoRoomStateChangedReason.KickOut ||
             state.reason == ZegoRoomStateChangedReason.ReconnectFailed) {

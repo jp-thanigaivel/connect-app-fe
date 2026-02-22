@@ -11,8 +11,10 @@ import 'package:connect/core/api/token_manager.dart';
 import 'package:connect/services/user_heartbeat_manager.dart';
 import 'package:connect/core/constants/api_constants.dart';
 import 'package:connect/services/zego_room_manager.dart';
+import 'package:connect/services/call_limit_manager.dart';
 import 'package:connect/core/utils/ui_utils.dart';
 import 'package:connect/components/promotion_popup.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:developer' as developer;
 
 @NowaGenerated()
@@ -64,8 +66,24 @@ class _LoginPageState extends State<LoginPage> {
             userName: userProfile.displayName.trim(),
             plugins: [ZegoUIKitSignalingPlugin()],
             notificationConfig: ZegoCallInvitationNotificationConfig(
-              androidNotificationConfig: ZegoCallAndroidNotificationConfig(),
+              androidNotificationConfig: ZegoCallAndroidNotificationConfig(
+                showOnFullScreen: userProfile.userType == 'EXPERT',
+                showOnLockedScreen: userProfile.userType == 'EXPERT',
+              ),
             ),
+            requireConfig: (ZegoCallInvitationData data) {
+              final config = ZegoUIKitPrebuiltCallConfig.oneOnOneVoiceCall();
+              config.topMenuBar.isVisible = true;
+              config.topMenuBar.buttons
+                  .insert(0, ZegoCallMenuBarButtonName.minimizingButton);
+
+              config.duration.onDurationUpdate = (Duration duration) {
+                CallLimitManager.instance
+                    .checkDuration(duration, ZegoUIKitPrebuiltCallController());
+              };
+
+              return config;
+            },
           );
           developer.log('Zego service initialized successfully',
               name: 'LoginPage');
@@ -161,8 +179,24 @@ class _LoginPageState extends State<LoginPage> {
             userName: userProfile.displayName.trim(),
             plugins: [ZegoUIKitSignalingPlugin()],
             notificationConfig: ZegoCallInvitationNotificationConfig(
-              androidNotificationConfig: ZegoCallAndroidNotificationConfig(),
+              androidNotificationConfig: ZegoCallAndroidNotificationConfig(
+                showOnFullScreen: userProfile.userType == 'EXPERT',
+                showOnLockedScreen: userProfile.userType == 'EXPERT',
+              ),
             ),
+            requireConfig: (ZegoCallInvitationData data) {
+              final config = ZegoUIKitPrebuiltCallConfig.oneOnOneVoiceCall();
+              config.topMenuBar.isVisible = true;
+              config.topMenuBar.buttons
+                  .insert(0, ZegoCallMenuBarButtonName.minimizingButton);
+
+              config.duration.onDurationUpdate = (Duration duration) {
+                CallLimitManager.instance
+                    .checkDuration(duration, ZegoUIKitPrebuiltCallController());
+              };
+
+              return config;
+            },
           );
           developer.log('Zego service initialized successfully',
               name: 'LoginPage');
@@ -217,8 +251,24 @@ class _LoginPageState extends State<LoginPage> {
             userName: userProfile.displayName.trim(),
             plugins: [ZegoUIKitSignalingPlugin()],
             notificationConfig: ZegoCallInvitationNotificationConfig(
-              androidNotificationConfig: ZegoCallAndroidNotificationConfig(),
+              androidNotificationConfig: ZegoCallAndroidNotificationConfig(
+                showOnFullScreen: userProfile.userType == 'EXPERT',
+                showOnLockedScreen: userProfile.userType == 'EXPERT',
+              ),
             ),
+            requireConfig: (ZegoCallInvitationData data) {
+              final config = ZegoUIKitPrebuiltCallConfig.oneOnOneVoiceCall();
+              config.topMenuBar.isVisible = true;
+              config.topMenuBar.buttons
+                  .insert(0, ZegoCallMenuBarButtonName.minimizingButton);
+
+              config.duration.onDurationUpdate = (Duration duration) {
+                CallLimitManager.instance
+                    .checkDuration(duration, ZegoUIKitPrebuiltCallController());
+              };
+
+              return config;
+            },
           );
 
           await UserHeartbeatManager.instance.start();
@@ -319,46 +369,13 @@ class _LoginPageState extends State<LoginPage> {
                     children: [
                       // Logo with Glassmorphism
                       Center(
-                        child: Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Theme.of(context).colorScheme.primary,
-                                Theme.of(context).colorScheme.tertiary,
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(32),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withValues(alpha: isDark ? 0.4 : 0.25),
-                                blurRadius: 30,
-                                offset: const Offset(0, 15),
-                              ),
-                            ],
-                          ),
-                          child: Container(
-                            margin: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? Theme.of(context)
-                                      .colorScheme
-                                      .surface
-                                      .withValues(alpha: 0.1)
-                                  : Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            child: const Icon(
-                              Icons.connect_without_contact_rounded,
-                              size: 64,
-                              color: Colors.white,
-                            ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: Image.asset(
+                            'assets/app_logo.png',
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
                           ),
                         ),
                       ),
@@ -376,7 +393,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Connect with your friends instantly',
+                        'Connect fast. Stay close.',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Theme.of(context)
@@ -448,6 +465,41 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                         ),
+                      const SizedBox(height: 24),
+                      Text.rich(
+                        TextSpan(
+                          text: 'By signing in, you agree to our ',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                          children: [
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.middle,
+                              child: GestureDetector(
+                                onTap: () => launchUrl(
+                                    Uri.parse(ApiConstants.legalPolicies)),
+                                child: Text(
+                                  'Terms and Conditions',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                        fontWeight: FontWeight.bold,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                       const SizedBox(height: 48),
                     ],
                   ),

@@ -28,12 +28,18 @@ class ApiClient {
         onError: (DioException e, handler) {
           final statusCode = e.response?.statusCode;
           final dynamic responseData = e.response?.data;
-          final dynamic statusObject =
-              responseData is Map ? responseData['status'] : null;
-          final String message = (statusObject is Map
-                  ? statusObject['statusDesc']?.toString()
-                  : null) ??
-              _getFriendlyErrorMessage(e);
+          String? statusDesc;
+
+          if (responseData is Map) {
+            final status = responseData['status'];
+            if (status is Map) {
+              statusDesc = status['statusDesc']?.toString();
+            } else if (responseData['statusDesc'] != null) {
+              statusDesc = responseData['statusDesc']?.toString();
+            }
+          }
+
+          final String message = statusDesc ?? _getFriendlyErrorMessage(e);
 
           developer.log(
             'API Error: [$statusCode] $message',
@@ -46,12 +52,12 @@ class ApiClient {
                 'Unauthorized access ($statusCode) - logging out user',
                 name: 'ApiClient');
 
+            // Show message immediately before clearing tokens/navigating
+            UiUtils.showErrorSnackBar('Session expired. Please login again.');
+
             // 1. Clear tokens
             TokenManager.clearTokens().then((_) {
-              // 2. Navigate to Login Page
-              UiUtils.showErrorSnackBar('Session expired. Please login again.');
-
-              // Route to login
+              // 2. Route to login
               navigatorKey.currentState?.pushNamedAndRemoveUntil(
                 'LoginPage',
                 (route) => false,
@@ -93,17 +99,59 @@ class ApiClient {
   }
 
   static String getErrorMessage(dynamic e) {
-    if (e is DioException) {
-      final dynamic responseData = e.response?.data;
-      if (responseData is Map && responseData['status'] != null) {
-        return responseData['status']['statusDesc']?.toString() ??
-            'An unknown error occurred';
+    if (e == null) return 'An unknown error occurred';
+
+    String errorStr = e.toString();
+
+    // 1. Try to extract from DioException (handling type mismatches gracefully)
+    try {
+      if (e is DioException ||
+          errorStr.startsWith('DioException') ||
+          errorStr.startsWith('DioError')) {
+        final dynamic responseData =
+            (e is DioException) ? e.response?.data : null;
+        final statusCode = (e is DioException) ? e.response?.statusCode : null;
+
+        if (responseData is Map) {
+          final status = responseData['status'];
+          if (status is Map) {
+            final desc = status['statusDesc']?.toString();
+            if (desc != null && desc.isNotEmpty) return desc;
+          }
+          final statusDesc = responseData['statusDesc']?.toString();
+          if (statusDesc != null && statusDesc.isNotEmpty) return statusDesc;
+        }
+
+        if (statusCode != null) {
+          if (statusCode == 401 || statusCode == 403) {
+            return 'Session expired. Please login again.';
+          }
+          if (statusCode == 400) {
+            return 'Invalid request. Please check your input.';
+          }
+          if (statusCode == 404) return 'The requested resource was not found.';
+          if (statusCode >= 500) return 'Server error. Please try again later.';
+          return 'Request failed ($statusCode).';
+        }
+
+        // If it's a Dio error but we can't get more details, return a friendly fallback
+        return 'Network error. Please check your connection.';
       }
-      return 'Request failed (${e.response?.statusCode ?? 'unknown error'}).';
+    } catch (_) {
+      // Fallback if the above logic fails
     }
-    return e.toString().contains('Exception:')
-        ? e.toString().split('Exception:').last
-        : 'An error occurred. Please try again.';
+
+    // 2. Generic exception cleaning
+    if (errorStr.contains('Exception:')) {
+      return errorStr.split('Exception:').last.trim();
+    }
+
+    // 3. Last resort fallbacks for technical strings
+    if (errorStr.contains('DioException [bad response]')) {
+      return 'Request failed. Please check your input.';
+    }
+
+    return errorStr.isEmpty ? 'An error occurred. Please try again.' : errorStr;
   }
 
   String _getFriendlyErrorMessage(DioException e) {

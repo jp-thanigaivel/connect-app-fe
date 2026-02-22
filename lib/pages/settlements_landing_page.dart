@@ -62,12 +62,26 @@ class _SettlementsLandingPageState extends State<SettlementsLandingPage> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        title: Text(
-          'Settlements',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
+        title: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/app_logo.png',
+                width: 32,
+                height: 32,
+                fit: BoxFit.cover,
               ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Connect',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+            ),
+          ],
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,

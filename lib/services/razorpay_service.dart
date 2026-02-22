@@ -1,3 +1,4 @@
+import 'package:connect/core/api/api_client.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:connect/services/payment_api_service.dart';
 import 'package:connect/models/payment_verification.dart';
@@ -41,8 +42,10 @@ class RazorpayService {
         onError?.call(verificationResponse.status.statusDesc);
       }
     } catch (e) {
-      developer.log('Payment verification failed: $e', name: 'RazorpayService');
-      onError?.call('Verification failed: $e');
+      final errorMessage = ApiClient.getErrorMessage(e);
+      developer.log('Payment verification failed: $errorMessage',
+          name: 'RazorpayService', error: e);
+      onError?.call('Verification failed: $errorMessage');
     }
   }
 
@@ -106,7 +109,9 @@ class RazorpayService {
 
       _razorpay.open(options);
     } catch (e) {
-      developer.log('Error during checkout: $e', name: 'RazorpayService');
+      final errorMessage = ApiClient.getErrorMessage(e);
+      developer.log('Error during checkout: $errorMessage',
+          name: 'RazorpayService', error: e);
       rethrow;
     }
   }

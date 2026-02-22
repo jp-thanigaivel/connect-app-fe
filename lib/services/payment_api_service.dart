@@ -52,8 +52,9 @@ class PaymentApiService {
         (json) => PaymentOrder.fromJson(json as Map<String, dynamic>),
       );
     } catch (e) {
-      developer.log('Error creating payment order: $e',
-          name: 'PaymentApiService');
+      final errorMessage = ApiClient.getErrorMessage(e);
+      developer.log('Error creating payment order: $errorMessage',
+          name: 'PaymentApiService', error: e);
       rethrow;
     }
   }
@@ -91,14 +92,26 @@ class PaymentApiService {
     }
   }
 
-  Future<ApiResponse<List<Transaction>>> getPaymentHistory(
-      {String? nextCursor}) async {
+  Future<ApiResponse<List<Transaction>>> getPaymentHistory({
+    String? nextCursor,
+    String? status,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     try {
-      final queryParams =
-          nextCursor != null ? {'nextCursor': nextCursor} : null;
+      final Map<String, dynamic> queryParams = {};
+      if (nextCursor != null) queryParams['nextCursor'] = nextCursor;
+      if (status != null && status.isNotEmpty) queryParams['status'] = status;
+      if (startDate != null) {
+        queryParams['createdOn__gte'] = startDate.toString().split(' ')[0];
+      }
+      if (endDate != null) {
+        queryParams['createdOn__lte'] = endDate.toString().split(' ')[0];
+      }
+
       final response = await _apiClient.get(
         ApiConstants.paymentHistory,
-        queryParameters: queryParams,
+        queryParameters: queryParams.isEmpty ? null : queryParams,
       );
 
       return ApiResponse<List<Transaction>>.fromJson(
@@ -107,6 +120,20 @@ class PaymentApiService {
       );
     } catch (e) {
       developer.log('Error fetching payment history: $e',
+          name: 'PaymentApiService');
+      rethrow;
+    }
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> getPaymentSearchConfig() async {
+    try {
+      final response = await _apiClient.get(ApiConstants.paymentSearchConfig);
+      return ApiResponse<Map<String, dynamic>>.fromJson(
+        response.data,
+        (json) => json as Map<String, dynamic>,
+      );
+    } catch (e) {
+      developer.log('Error fetching payment search config: $e',
           name: 'PaymentApiService');
       rethrow;
     }
@@ -121,8 +148,9 @@ class PaymentApiService {
         (json) => Transaction.fromJson(json as Map<String, dynamic>),
       );
     } catch (e) {
-      developer.log('Error fetching order status: $e',
-          name: 'PaymentApiService');
+      final errorMessage = ApiClient.getErrorMessage(e);
+      developer.log('Error fetching order status: $errorMessage',
+          name: 'PaymentApiService', error: e);
       rethrow;
     }
   }
