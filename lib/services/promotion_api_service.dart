@@ -8,7 +8,10 @@ class PromotionApiService {
 
   Future<ApiResponse<List<Promotion>>> getPromotions() async {
     try {
-      final response = await _apiClient.get(ApiConstants.promotion);
+      final response = await _apiClient.get(
+        ApiConstants.promotion,
+        queryParameters: {'isActive': true},
+      );
 
       if (response.data == null) {
         return ApiResponse(

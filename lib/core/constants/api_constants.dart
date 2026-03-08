@@ -6,6 +6,7 @@ class ApiConstants {
   static const String heartbeat = '/connect/app/api/v1/auth/heartbeat';
   static const String experts = '/connect/app/api/v1/experts';
   static const String userProfile = '/connect/app/api/v1/users';
+  static const String deleteAccount = '/connect/app/api/v1/users/me';
   static const String createOrder = '/connect/app/api/v1/payment/order';
   static const String verifyPayment = '/connect/app/api/v1/payment/verify';
   static const String razorpayKey = 'rzp_test_S5oNmjMKNRtcLJ';

@@ -272,4 +272,16 @@ class ApiClient {
       'PATCH $path',
     );
   }
+
+  Future<Response> delete(
+    String path, {
+    dynamic data,
+    RetryConfig? retryConfig,
+  }) async {
+    return _executeWithRetry(
+      () => _dio.delete(path, data: data),
+      retryConfig,
+      'DELETE $path',
+    );
+  }
 }

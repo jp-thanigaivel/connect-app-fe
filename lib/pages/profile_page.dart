@@ -196,6 +196,54 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  void _showDeleteAccountConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text('Are you sure you want to delete your account ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _performDeleteAccount();
+            },
+            child: Text(
+              'Delete',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _performDeleteAccount() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final success = await _userApiService.deleteAccount();
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (success) {
+        UiUtils.showSuccessSnackBar('Account deleted successfully');
+        _performLogout();
+      } else {
+        UiUtils.showErrorSnackBar(
+            'Failed to delete account. Please try again.');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -502,8 +550,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           label: 'Delete Account',
                           isDestructive: true,
                           onTap: () {
-                            UiUtils.showInfoSnackBar(
-                                'Delete account coming soon!');
+                            _showDeleteAccountConfirmation(context);
                           },
                         ),
                         const SizedBox(height: 24),

@@ -75,4 +75,16 @@ class UserApiService {
       return null;
     }
   }
+
+  Future<bool> deleteAccount() async {
+    try {
+      final response = await _apiClient.delete(ApiConstants.deleteAccount);
+      developer.log('Account deleted successfully: ${response.statusCode}',
+          name: 'UserApiService');
+      return true;
+    } catch (e) {
+      developer.log('Error deleting account: $e', name: 'UserApiService');
+      return false;
+    }
+  }
 }
