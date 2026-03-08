@@ -74,6 +74,10 @@ class FilterGroup {
   bool get isNullCheck {
     return conditions.any((c) => c.filterType == '__isnull');
   }
+
+  bool get isDate {
+    return conditions.any((c) => c.fieldType == 'datetime_str');
+  }
 }
 
 class FilterCondition {

@@ -2,7 +2,6 @@ import 'package:connect/core/api/api_client.dart';
 import 'package:connect/core/constants/api_constants.dart';
 import 'package:connect/models/api_response.dart';
 import 'package:connect/models/promotion.dart';
-import 'dart:developer' as developer;
 
 class PromotionApiService {
   final ApiClient _apiClient = ApiClient();

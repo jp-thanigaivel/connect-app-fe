@@ -13,8 +13,6 @@ import 'package:connect/services/promotion_api_service.dart';
 import 'package:connect/components/promotion_popup.dart';
 import 'package:connect/components/promotion_carousel.dart';
 import 'package:connect/core/api/token_manager.dart';
-import 'package:connect/core/constants/api_constants.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'dart:developer' as developer;
 
 @NowaGenerated()
@@ -602,40 +600,6 @@ class _UsersLandingPageState extends State<UsersLandingPage> {
                                               child:
                                                   CircularProgressIndicator()),
                                         ),
-                                      const SizedBox(height: 32),
-                                      const Divider(),
-                                      const SizedBox(height: 16),
-                                      GestureDetector(
-                                        onTap: () => launchUrl(Uri.parse(
-                                            ApiConstants.legalPolicies)),
-                                        child: Text(
-                                          'Terms and Conditions',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .primary,
-                                                fontWeight: FontWeight.bold,
-                                                decoration:
-                                                    TextDecoration.underline,
-                                              ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        'By using this app, you accept our terms.',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .labelSmall
-                                            ?.copyWith(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .onSurfaceVariant,
-                                            ),
-                                      ),
-                                      const SizedBox(height: 32),
                                     ],
                                   );
                                 }

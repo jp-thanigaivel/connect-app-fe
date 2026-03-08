@@ -137,7 +137,9 @@ class _GenericFilterBottomSheetState extends State<GenericFilterBottomSheet> {
               ),
         ),
         const SizedBox(height: 12),
-        if (group.isRange)
+        if (group.isDate)
+          _buildDateRangeFilter(group)
+        else if (group.isRange)
           _buildRangeSlider(group)
         else if (group.conditions.any((c) => c.allowedValues != null))
           _buildCheckboxList(group)
@@ -221,6 +223,122 @@ class _GenericFilterBottomSheetState extends State<GenericFilterBottomSheet> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildDateRangeFilter(FilterGroup group) {
+    String? gtKey;
+    String? ltKey;
+
+    for (final c in group.conditions) {
+      if (c.filterType == '__gt' || c.filterType == '__gte') gtKey = c.key;
+      if (c.filterType == '__lt' || c.filterType == '__lte') ltKey = c.key;
+    }
+
+    gtKey ??= group.conditions.first.key;
+    ltKey ??= group.conditions.last.key;
+
+    final gtValue = _currentFilters[gtKey];
+    final ltValue = _currentFilters[ltKey];
+
+    String displayText = 'Select Date Range';
+    if (gtValue != null && ltValue != null) {
+      displayText = '$gtValue to $ltValue';
+    } else if (gtValue != null) {
+      displayText = 'From $gtValue';
+    } else if (ltValue != null) {
+      displayText = 'Until $ltValue';
+    }
+
+    return InkWell(
+      onTap: () async {
+        DateTime? initialStart;
+        DateTime? initialEnd;
+
+        if (gtValue != null) {
+          initialStart = DateTime.tryParse(gtValue.toString());
+        }
+        if (ltValue != null) {
+          initialEnd = DateTime.tryParse(ltValue.toString());
+        }
+
+        final picked = await showDateRangePicker(
+          context: context,
+          firstDate: DateTime(2000),
+          lastDate: DateTime(2100),
+          initialDateRange: initialStart != null && initialEnd != null
+              ? DateTimeRange(start: initialStart, end: initialEnd)
+              : null,
+          builder: (context, child) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: Theme.of(context).colorScheme.copyWith(
+                      primary: Theme.of(context).colorScheme.primary,
+                    ),
+              ),
+              child: child!,
+            );
+          },
+        );
+
+        if (picked != null) {
+          setState(() {
+            // Format to yyyy-MM-dd
+            final startStr =
+                '${picked.start.year}-${picked.start.month.toString().padLeft(2, '0')}-${picked.start.day.toString().padLeft(2, '0')}';
+            final endStr =
+                '${picked.end.year}-${picked.end.month.toString().padLeft(2, '0')}-${picked.end.day.toString().padLeft(2, '0')}';
+
+            _currentFilters[gtKey!] = startStr;
+            _currentFilters[ltKey!] = endStr;
+          });
+        }
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              displayText,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: gtValue != null || ltValue != null
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                    color: gtValue != null || ltValue != null
+                        ? Theme.of(context).colorScheme.onSurface
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            if (gtValue != null || ltValue != null)
+              IconButton(
+                icon: const Icon(Icons.clear, size: 20),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: () {
+                  setState(() {
+                    _currentFilters.remove(gtKey);
+                    _currentFilters.remove(ltKey);
+                  });
+                },
+              )
+            else
+              Icon(
+                Icons.calendar_today,
+                size: 20,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+          ],
+        ),
+      ),
     );
   }
 
