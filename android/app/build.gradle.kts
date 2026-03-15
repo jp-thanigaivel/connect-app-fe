@@ -66,8 +66,7 @@ android {
    
         }
         getByName("release") {
-            // ✅ TEMP: Use debug keystore for local testing
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
 
         isMinifyEnabled = false
         isShrinkResources = false
