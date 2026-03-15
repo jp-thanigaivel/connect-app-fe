@@ -5,6 +5,8 @@ import 'package:connect/models/payment_order.dart';
 import 'package:connect/models/payment_verification.dart';
 import 'package:connect/models/wallet_balance.dart';
 import 'package:connect/models/transaction.dart';
+import 'package:connect/core/utils/app_logger.dart';
+
 import 'dart:developer' as developer;
 
 class PaymentApiService {
@@ -18,8 +20,7 @@ class PaymentApiService {
         (json) => json as Map<String, dynamic>,
       );
     } catch (e) {
-      developer.log('Error fetching conversion rate: $e',
-          name: 'PaymentApiService');
+      AppLogger.error('Error fetching conversion rate: $e', name: 'PaymentApiService');
       rethrow;
     }
   }
@@ -53,8 +54,7 @@ class PaymentApiService {
       );
     } catch (e) {
       final errorMessage = ApiClient.getErrorMessage(e);
-      developer.log('Error creating payment order: $errorMessage',
-          name: 'PaymentApiService', error: e);
+      AppLogger.error('Error creating payment order: $errorMessage', error: e, name: 'PaymentApiService');
       rethrow;
     }
   }
@@ -72,7 +72,7 @@ class PaymentApiService {
         (json) {},
       );
     } catch (e) {
-      developer.log('Error verifying payment: $e', name: 'PaymentApiService');
+      AppLogger.error('Error verifying payment: $e', name: 'PaymentApiService');
       rethrow;
     }
   }
@@ -86,8 +86,7 @@ class PaymentApiService {
         (json) => WalletBalance.fromJson(json as Map<String, dynamic>),
       );
     } catch (e) {
-      developer.log('Error fetching wallet balance: $e',
-          name: 'PaymentApiService');
+      AppLogger.error('Error fetching wallet balance: $e', name: 'PaymentApiService');
       rethrow;
     }
   }
@@ -119,8 +118,7 @@ class PaymentApiService {
         (json) => (json as List).map((e) => Transaction.fromJson(e)).toList(),
       );
     } catch (e) {
-      developer.log('Error fetching payment history: $e',
-          name: 'PaymentApiService');
+      AppLogger.error('Error fetching payment history: $e', name: 'PaymentApiService');
       rethrow;
     }
   }
@@ -133,8 +131,7 @@ class PaymentApiService {
         (json) => json as Map<String, dynamic>,
       );
     } catch (e) {
-      developer.log('Error fetching payment search config: $e',
-          name: 'PaymentApiService');
+      AppLogger.error('Error fetching payment search config: $e', name: 'PaymentApiService');
       rethrow;
     }
   }
@@ -149,8 +146,7 @@ class PaymentApiService {
       );
     } catch (e) {
       final errorMessage = ApiClient.getErrorMessage(e);
-      developer.log('Error fetching order status: $errorMessage',
-          name: 'PaymentApiService', error: e);
+      AppLogger.error('Error fetching order status: $errorMessage', error: e, name: 'PaymentApiService');
       rethrow;
     }
   }

@@ -6,6 +6,7 @@ import 'package:connect/models/support_ticket.dart';
 import 'package:connect/services/support_api_service.dart';
 import 'package:connect/core/utils/ui_utils.dart';
 import 'package:connect/core/api/api_client.dart';
+import 'package:connect/core/utils/app_logger.dart';
 
 class CreateTicketBottomSheet extends StatefulWidget {
   final VoidCallback onSuccess;
@@ -101,7 +102,9 @@ class _CreateTicketBottomSheetState extends State<CreateTicketBottomSheet> {
         widget.onSuccess();
         if (mounted) Navigator.pop(context);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to create ticket',
+          error: e, stackTrace: stackTrace, name: 'CreateTicketBottomSheet');
       if (mounted) {
         _showError(ApiClient.getErrorMessage(e));
       }

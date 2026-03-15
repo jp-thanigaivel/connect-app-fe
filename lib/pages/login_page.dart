@@ -15,6 +15,10 @@ import 'package:connect/services/call_limit_manager.dart';
 import 'package:connect/core/utils/ui_utils.dart';
 import 'package:connect/components/promotion_popup.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:connect/core/utils/app_logger.dart';
+import 'package:connect/core/services/sentry_service.dart';
+import 'package:connect/core/utils/jwt_utils.dart';
+
 import 'dart:developer' as developer;
 
 @NowaGenerated()
@@ -48,16 +52,20 @@ class _LoginPageState extends State<LoginPage> {
     if (token != null && token.isNotEmpty) {
       if (mounted) setState(() => _isLoading = true);
       try {
+        final userContext = JwtUtils.getUserContext(token);
+        if (userContext != null) {
+          SentryService.setUserContext(userContext);
+        }
         final zegoResponse = await _authApiService.refreshZegoToken();
         final userProfile = await _userApiService.getUserProfile();
 
         if (userProfile != null) {
           await TokenManager.saveUserType(userProfile.userType);
-          developer.log('Un-initializing Zego service to ensure clean state',
+          AppLogger.info('Un-initializing Zego service to ensure clean state',
               name: 'LoginPage');
           await ZegoUIKitPrebuiltCallInvitationService().uninit();
 
-          developer.log('Initializing Zego service...', name: 'LoginPage');
+          AppLogger.info('Initializing Zego service...', name: 'LoginPage');
           await ZegoUIKitPrebuiltCallInvitationService().init(
             appID: int.parse(zegoResponse.data!.zegoAppId.toString().trim()),
             appSign: '',
@@ -85,7 +93,7 @@ class _LoginPageState extends State<LoginPage> {
               return config;
             },
           );
-          developer.log('Zego service initialized successfully',
+          AppLogger.info('Zego service initialized successfully',
               name: 'LoginPage');
 
           // Start user heartbeat for online status
@@ -94,7 +102,7 @@ class _LoginPageState extends State<LoginPage> {
           // Initialize persistent room state monitoring
           ZegoRoomManager.instance.init();
 
-          developer.log('Zego service initialized. Waiting for connection...',
+          AppLogger.info('Zego service initialized. Waiting for connection...',
               name: 'LoginPage');
 
           PromotionPopup.resetShownFlag();
@@ -102,8 +110,13 @@ class _LoginPageState extends State<LoginPage> {
             Navigator.pushReplacementNamed(context, 'HomePage');
           }
         }
-      } catch (e) {
-        developer.log('Auto-login failed: $e', name: 'LoginPage');
+      } catch (e, stackTrace) {
+        AppLogger.error('Error in LoginPage',
+            error: e, stackTrace: stackTrace, name: 'LoginPage');
+
+        AppLogger.error('Auto-login failed: $e', name: 'LoginPage');
+        AppLogger.logEvent('Auto login failed',
+            attributes: {'error': e.toString()}, isError: true);
       } finally {
         if (mounted) {
           setState(() => _isLoading = false);
@@ -117,7 +130,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final googleAuth = await _googleAuthService.signIn();
-      developer.log('Google login successful', name: 'LoginPage');
+      AppLogger.info('Google login successful', name: 'LoginPage');
       // if (kDebugMode) {
       //   debugPrint('Google login successful $googleAuth');
       // }
@@ -140,7 +153,17 @@ class _LoginPageState extends State<LoginPage> {
       final response = await _authApiService.loginWithGoogle(idToken);
 
       if (response.status.isSuccess && response.data != null) {
-        developer.log('Backend login successful', name: 'LoginPage');
+        AppLogger.info('Backend login successful', name: 'LoginPage');
+        AppLogger.logEvent('Login success', attributes: {'method': 'google'});
+        SentryService.count('user_login');
+
+        final accessToken = await TokenManager.getAccessToken();
+        if (accessToken != null) {
+          final userContext = JwtUtils.getUserContext(accessToken);
+          if (userContext != null) {
+            SentryService.setUserContext(userContext);
+          }
+        }
 
         // if (kDebugMode) {
         //   debugPrint('Backend login successful ${response.data}');
@@ -167,10 +190,10 @@ class _LoginPageState extends State<LoginPage> {
             // debugPrint('Zego Token Start: ${zegoToken.substring(0, 5)}...');
           }
 
-          developer.log('Un-initializing Zego...', name: 'LoginPage');
+          AppLogger.info('Un-initializing Zego...', name: 'LoginPage');
           await ZegoUIKitPrebuiltCallInvitationService().uninit();
 
-          developer.log('Initializing Zego service...', name: 'LoginPage');
+          AppLogger.info('Initializing Zego service...', name: 'LoginPage');
           await ZegoUIKitPrebuiltCallInvitationService().init(
             appID: int.parse(zegoAppId.trim()),
             appSign: '', // Using token, so appSign is empty or ignored
@@ -198,7 +221,7 @@ class _LoginPageState extends State<LoginPage> {
               return config;
             },
           );
-          developer.log('Zego service initialized successfully',
+          AppLogger.info('Zego service initialized successfully',
               name: 'LoginPage');
 
           // Start user heartbeat for online status
@@ -207,7 +230,7 @@ class _LoginPageState extends State<LoginPage> {
           // Initialize persistent room state monitoring
           ZegoRoomManager.instance.init();
         } else {
-          developer.log('Failed to fetch user profile for Zego init',
+          AppLogger.error('Failed to fetch user profile for Zego init',
               name: 'LoginPage');
         }
 
@@ -219,8 +242,14 @@ class _LoginPageState extends State<LoginPage> {
       } else {
         throw Exception(response.status.statusDesc);
       }
-    } catch (error) {
-      developer.log('Login failed: $error', name: 'LoginPage');
+    } catch (error, stackTrace) {
+      AppLogger.error('Error in LoginPage',
+          error: error, stackTrace: stackTrace, name: 'LoginPage');
+
+      AppLogger.error('Login failed: $error', name: 'LoginPage');
+      AppLogger.logEvent('Login failed',
+          attributes: {'method': 'google', 'error': error.toString()},
+          isError: true);
       // Global error handler in ApiClient handles SnackBars
     } finally {
       if (mounted) {
@@ -236,7 +265,17 @@ class _LoginPageState extends State<LoginPage> {
           ApiConstants.adminPhone, ApiConstants.adminPassword);
 
       if (response.status.isSuccess && response.data != null) {
-        developer.log('Admin login successful', name: 'LoginPage');
+        AppLogger.info('Admin login successful', name: 'LoginPage');
+        AppLogger.logEvent('Login success', attributes: {'method': 'admin'});
+        SentryService.count('user_login');
+
+        final accessToken = await TokenManager.getAccessToken();
+        if (accessToken != null) {
+          final userContext = JwtUtils.getUserContext(accessToken);
+          if (userContext != null) {
+            SentryService.setUserContext(userContext);
+          }
+        }
 
         final userProfile = await _userApiService.getUserProfile();
         if (userProfile != null) {
@@ -281,8 +320,14 @@ class _LoginPageState extends State<LoginPage> {
           }
         }
       }
-    } catch (e) {
-      developer.log('Admin login failed: $e', name: 'LoginPage');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in LoginPage',
+          error: e, stackTrace: stackTrace, name: 'LoginPage');
+
+      AppLogger.error('Admin login failed: $e', name: 'LoginPage');
+      AppLogger.logEvent('Login failed',
+          attributes: {'method': 'admin', 'error': e.toString()},
+          isError: true);
       // Global error handler in ApiClient handles SnackBars
     } finally {
       if (mounted) {

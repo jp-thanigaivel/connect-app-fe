@@ -11,6 +11,8 @@ import 'package:connect/core/config/currency_config.dart';
 import 'package:connect/services/document_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:connect/core/utils/app_logger.dart';
+
 import 'dart:developer' as developer;
 
 class ExpertDetailsPage extends StatefulWidget {
@@ -55,9 +57,10 @@ class _ExpertDetailsPageState extends State<ExpertDetailsPage> {
           _isLoading = false;
         });
       }
-    } catch (e) {
-      developer.log('Error fetching expert details: $e',
-          name: 'ExpertDetailsPage');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in ExpertDetailsPage', error: e, stackTrace: stackTrace, name: 'ExpertDetailsPage');
+
+      AppLogger.error('Error fetching expert details: $e', name: 'ExpertDetailsPage');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -108,8 +111,10 @@ class _ExpertDetailsPageState extends State<ExpertDetailsPage> {
         });
         UiUtils.showSuccessSnackBar('Languages updated successfully');
       }
-    } catch (e) {
-      developer.log('Error updating languages: $e', name: 'ExpertDetailsPage');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in ExpertDetailsPage', error: e, stackTrace: stackTrace, name: 'ExpertDetailsPage');
+
+      AppLogger.error('Error updating languages: $e', name: 'ExpertDetailsPage');
       UiUtils.showErrorSnackBar('Failed to update languages');
     }
   }
@@ -156,8 +161,10 @@ class _ExpertDetailsPageState extends State<ExpertDetailsPage> {
         });
         UiUtils.showSuccessSnackBar('Expertise tags updated successfully');
       }
-    } catch (e) {
-      developer.log('Error updating tags: $e', name: 'ExpertDetailsPage');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in ExpertDetailsPage', error: e, stackTrace: stackTrace, name: 'ExpertDetailsPage');
+
+      AppLogger.error('Error updating tags: $e', name: 'ExpertDetailsPage');
       UiUtils.showErrorSnackBar('Failed to update expertise tags');
     }
   }
@@ -217,8 +224,10 @@ class _ExpertDetailsPageState extends State<ExpertDetailsPage> {
         });
         UiUtils.showSuccessSnackBar('Profile picture updated successfully');
       }
-    } catch (e) {
-      developer.log('Error uploading image: $e', name: 'ExpertDetailsPage');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in ExpertDetailsPage', error: e, stackTrace: stackTrace, name: 'ExpertDetailsPage');
+
+      AppLogger.error('Error uploading image: $e', name: 'ExpertDetailsPage');
       if (mounted) {
         setState(() {
           _isUploading = false;

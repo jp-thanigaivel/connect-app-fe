@@ -1,4 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:connect/core/utils/app_logger.dart';
+
 import 'dart:developer' as developer;
 
 class NotificationService {
@@ -29,8 +31,7 @@ class NotificationService {
     await _notificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: (details) {
-        developer.log('Notification clicked: ${details.payload}',
-            name: 'NotificationService');
+        AppLogger.info('Notification clicked: ${details.payload}', name: 'NotificationService');
       },
     );
 
@@ -42,8 +43,7 @@ class NotificationService {
       await androidImplementation.requestNotificationsPermission();
     }
 
-    developer.log('Notification service initialized',
-        name: 'NotificationService');
+    AppLogger.info('Notification service initialized', name: 'NotificationService');
   }
 
   Future<void> showHeadsUpNotification({
@@ -92,12 +92,9 @@ class NotificationService {
         }
       }
 
-      developer.log(
-          'Heads-up notification pulse triggered ($repeatCount times): $title',
-          name: 'NotificationService');
+      AppLogger.info('Heads-up notification pulse triggered ($repeatCount times): $title', name: 'NotificationService');
     } catch (e) {
-      developer.log('Error showing notification: $e',
-          name: 'NotificationService');
+      AppLogger.error('Error showing notification: $e', name: 'NotificationService');
     }
   }
 }

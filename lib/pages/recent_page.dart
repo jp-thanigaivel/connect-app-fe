@@ -8,6 +8,8 @@ import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:connect/core/utils/ui_utils.dart';
 import 'package:connect/components/bottom_sheet_wrapper.dart';
 import 'package:connect/core/config/currency_config.dart';
+import 'package:connect/core/utils/app_logger.dart';
+
 
 @NowaGenerated()
 class RecentPage extends StatefulWidget {
@@ -49,7 +51,9 @@ class _RecentPageState extends State<RecentPage> {
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in RecentPage', error: e, stackTrace: stackTrace, name: 'RecentPage');
+
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -138,7 +142,9 @@ class _RecentPageState extends State<RecentPage> {
                                   response.status.statusDesc);
                             }
                             _fetchCallHistory();
-                          } catch (e) {
+                          } catch (e, stackTrace) {
+      AppLogger.error('Error in RecentPage', error: e, stackTrace: stackTrace, name: 'RecentPage');
+
                             // Error likely handled by global interceptor or logged
                           }
                         },

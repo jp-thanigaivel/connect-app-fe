@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:connect/models/user_context.dart';
 
 class JwtUtils {
   static Map<String, dynamic> decode(String token) {
@@ -18,6 +19,15 @@ class JwtUtils {
     try {
       final decoded = decode(token);
       return decoded['userId'] as String?;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static UserContext? getUserContext(String token) {
+    try {
+      final decoded = decode(token);
+      return UserContext.fromJwt(decoded);
     } catch (e) {
       return null;
     }

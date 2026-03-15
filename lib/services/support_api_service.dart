@@ -3,6 +3,8 @@ import 'package:connect/core/constants/api_constants.dart';
 import 'package:connect/models/api_response.dart';
 import 'package:connect/models/support_ticket.dart';
 import 'package:connect/models/support_message.dart';
+import 'package:connect/core/utils/app_logger.dart';
+
 import 'dart:developer' as developer;
 
 class SupportApiService {
@@ -23,8 +25,7 @@ class SupportApiService {
         (json) => (json as List).map((e) => SupportTicket.fromJson(e)).toList(),
       );
     } catch (e) {
-      developer.log('Error fetching support tickets: $e',
-          name: 'SupportApiService');
+      AppLogger.error('Error fetching support tickets: $e', name: 'SupportApiService');
       rethrow;
     }
   }
@@ -42,8 +43,7 @@ class SupportApiService {
         (json) => SupportTicket.fromJson(json as Map<String, dynamic>),
       );
     } catch (e) {
-      developer.log('Error creating support ticket: $e',
-          name: 'SupportApiService');
+      AppLogger.error('Error creating support ticket: $e', name: 'SupportApiService');
       rethrow;
     }
   }
@@ -61,8 +61,7 @@ class SupportApiService {
             (json as List).map((e) => SupportMessage.fromJson(e)).toList(),
       );
     } catch (e) {
-      developer.log('Error fetching ticket messages: $e',
-          name: 'SupportApiService');
+      AppLogger.error('Error fetching ticket messages: $e', name: 'SupportApiService');
       rethrow;
     }
   }
@@ -80,8 +79,7 @@ class SupportApiService {
         (json) => SupportMessage.fromJson(json as Map<String, dynamic>),
       );
     } catch (e) {
-      developer.log('Error sending ticket message: $e',
-          name: 'SupportApiService');
+      AppLogger.error('Error sending ticket message: $e', name: 'SupportApiService');
       rethrow;
     }
   }

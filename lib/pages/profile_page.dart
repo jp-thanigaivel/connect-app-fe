@@ -1,3 +1,4 @@
+import 'package:connect/core/services/sentry_service.dart';
 import 'package:connect/core/api/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,6 +20,8 @@ import 'package:connect/services/user_heartbeat_manager.dart';
 import 'package:connect/services/call_heartbeat_manager.dart';
 import 'package:connect/core/utils/ui_utils.dart';
 import 'package:connect/core/config/currency_config.dart';
+import 'package:connect/core/utils/app_logger.dart';
+
 import 'dart:developer' as developer;
 
 @NowaGenerated()
@@ -126,7 +129,10 @@ class _ProfilePageState extends State<ProfilePage> {
           }
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in ProfilePage',
+          error: e, stackTrace: stackTrace, name: 'ProfilePage');
+
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -143,8 +149,12 @@ class _ProfilePageState extends State<ProfilePage> {
           _conversionRate = (response.data!['rate'] ?? 50.0).toDouble();
         });
       }
-    } catch (e) {
-      developer.log('Error fetching conversion rate: $e', name: 'ProfilePage');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in ProfilePage',
+          error: e, stackTrace: stackTrace, name: 'ProfilePage');
+
+      AppLogger.error('Error fetching conversion rate: $e',
+          name: 'ProfilePage');
     }
   }
 
@@ -175,6 +185,8 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _performLogout() async {
+    AppLogger.logEvent('Logout');
+    SentryService.count('user_logout');
     // 1. Clear local tokens
     await TokenManager.clearTokens();
 
@@ -235,9 +247,12 @@ class _ProfilePageState extends State<ProfilePage> {
       });
 
       if (success) {
+        AppLogger.logEvent('User deleted');
+        SentryService.count('user_delete');
         UiUtils.showSuccessSnackBar('Account deleted successfully');
         _performLogout();
       } else {
+        AppLogger.logEvent('User delete failed', isError: true);
         UiUtils.showErrorSnackBar(
             'Failed to delete account. Please try again.');
       }
@@ -620,7 +635,10 @@ class _ProfilePageState extends State<ProfilePage> {
         'December'
       ];
       return '${months[dateTime.month - 1]} ${dateTime.year}';
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in ProfilePage',
+          error: e, stackTrace: stackTrace, name: 'ProfilePage');
+
       return 'January 2026'; // Fallback
     }
   }

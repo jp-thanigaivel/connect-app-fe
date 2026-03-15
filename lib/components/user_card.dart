@@ -9,6 +9,9 @@ import 'package:connect/services/call_limit_manager.dart';
 import 'package:connect/core/utils/ui_utils.dart';
 import 'package:connect/core/api/token_manager.dart';
 import 'package:connect/core/config/currency_config.dart';
+import 'package:connect/core/utils/app_logger.dart';
+import 'package:connect/core/services/sentry_service.dart';
+
 import 'dart:developer' as developer;
 
 @NowaGenerated()
@@ -67,7 +70,7 @@ class UserCard extends StatelessWidget {
                                   cacheHeight: 200,
                                   errorBuilder: (context, error, stackTrace) {
                                     // Log validation error but fallback UI handles it gracefully
-                                    // developer.log('Image failed: $error', name: 'UserCard');
+                                    // AppLogger.error('Image failed: $error', name: 'UserCard');
                                     return Center(
                                       child: Text(
                                         expert.initials,
@@ -322,9 +325,9 @@ class UserCard extends StatelessWidget {
                   expert.pricePerMinute.price.toDouble(),
                 );
               }
-            } catch (e) {
-              developer.log('Failed to fetch balance for call limit: $e',
-                  name: 'UserCard');
+            } catch (e, stackTrace) {
+              AppLogger.error('Failed to fetch balance for call limit: $e',
+                  error: e, stackTrace: stackTrace, name: 'UserCard');
             }
           }
 
@@ -332,10 +335,12 @@ class UserCard extends StatelessWidget {
               await CallApiService().initiateCall(expert.userId);
 
           if (callSessionId != null && callSessionId.isNotEmpty) {
-            developer.log(
+            AppLogger.info(
                 'Call session initiated: $callSessionId. Starting heartbeat...',
                 name: 'UserCard');
             CallHeartbeatManager.instance.start(callSessionId);
+            SentryService.count('call_initiated');
+            SentryService.startTimer(callSessionId);
 
             final isSuccess =
                 await ZegoUIKitPrebuiltCallInvitationService().send(
@@ -351,15 +356,44 @@ class UserCard extends StatelessWidget {
             );
 
             if (!isSuccess) {
-              developer.log('Zego invitation failed to send', name: 'UserCard');
+              AppLogger.logEvent(
+                'Call failed for session $callSessionId to user ${expert.userId}: Zego invitation failed',
+                attributes: {
+                  'calleeId': expert.userId,
+                  'callSessionId': callSessionId,
+                  'reason': 'Zego invitation failed to send',
+                },
+                isError: true,
+              );
+              AppLogger.error('Zego invitation failed to send',
+                  name: 'UserCard');
               if (context.mounted) {
                 UiUtils.showErrorSnackBar(
                     'Failed to connect. Please check your network and try again.');
               }
+            } else {
+              AppLogger.logEvent(
+                'Call initiated from session $callSessionId to user ${expert.userId}.',
+                attributes: {
+                  'calleeId': expert.userId,
+                  'callSessionId': callSessionId,
+                  'ratePerMinute': expert.pricePerMinute.price.toString(),
+                  'currency': expert.pricePerMinute.currency,
+                },
+              );
             }
           }
-        } catch (e) {
-          developer.log('Call initiation failed: $e', name: 'UserCard');
+        } catch (e, stackTrace) {
+          AppLogger.logEvent(
+            'Call initiation threw an exception for user ${expert.userId}: $e',
+            attributes: {
+              'calleeId': expert.userId,
+              'reason': e.toString(),
+            },
+            isError: true,
+          );
+          AppLogger.error('Call initiation failed: $e',
+              error: e, stackTrace: stackTrace, name: 'UserCard');
           // Global error handler in ApiClient handles API-related SnackBars
         }
       },

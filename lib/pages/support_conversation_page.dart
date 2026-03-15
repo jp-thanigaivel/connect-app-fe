@@ -4,6 +4,8 @@ import 'package:connect/models/support_message.dart';
 import 'package:connect/services/support_api_service.dart';
 import 'package:connect/core/api/api_client.dart';
 import 'dart:async';
+import 'package:connect/core/utils/app_logger.dart';
+
 
 class SupportConversationPage extends StatefulWidget {
   final SupportTicket ticket;
@@ -96,7 +98,9 @@ class _SupportConversationPageState extends State<SupportConversationPage> {
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in SupportConversationPage', error: e, stackTrace: stackTrace, name: 'SupportConversationPage');
+
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -144,7 +148,9 @@ class _SupportConversationPageState extends State<SupportConversationPage> {
         });
         Timer(const Duration(milliseconds: 100), _scrollToBottom);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in SupportConversationPage', error: e, stackTrace: stackTrace, name: 'SupportConversationPage');
+
       if (mounted) {
         setState(() {
           _isSending = false;
@@ -349,7 +355,9 @@ class _SupportConversationPageState extends State<SupportConversationPage> {
     try {
       final dateTime = DateTime.parse(dateString);
       return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in SupportConversationPage', error: e, stackTrace: stackTrace, name: 'SupportConversationPage');
+
       return dateString;
     }
   }
@@ -510,7 +518,9 @@ class _ChatBubble extends StatelessWidget {
     try {
       final dateTime = DateTime.parse(dateString);
       return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in SupportConversationPage', error: e, stackTrace: stackTrace, name: 'SupportConversationPage');
+
       return '';
     }
   }

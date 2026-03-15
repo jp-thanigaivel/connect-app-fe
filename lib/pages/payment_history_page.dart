@@ -8,6 +8,8 @@ import 'package:connect/components/bottom_sheet_wrapper.dart';
 import 'package:connect/models/transaction.dart';
 import 'package:connect/models/payment_verification.dart';
 import 'package:connect/core/utils/ui_utils.dart';
+import 'package:connect/core/utils/app_logger.dart';
+
 
 @NowaGenerated()
 class PaymentHistoryPage extends StatefulWidget {
@@ -86,7 +88,9 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
           _isLoadingMore = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in PaymentHistoryPage', error: e, stackTrace: stackTrace, name: 'PaymentHistoryPage');
+
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -110,7 +114,9 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
           });
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in PaymentHistoryPage', error: e, stackTrace: stackTrace, name: 'PaymentHistoryPage');
+
       // Silently fail config fetch
     }
   }
@@ -638,7 +644,9 @@ class _TransactionCard extends StatelessWidget {
                                       onRefresh();
                                     }
                                   }
-                                } catch (e) {
+                                } catch (e, stackTrace) {
+      AppLogger.error('Error in PaymentHistoryPage', error: e, stackTrace: stackTrace, name: 'PaymentHistoryPage');
+
                                   // Global error handler in ApiClient will show the snackbar
                                 }
                               },
@@ -715,7 +723,9 @@ class _TransactionCard extends StatelessWidget {
         'Dec'
       ];
       return '${dateTime.day} ${months[dateTime.month]}, ${dateTime.year} • ${_formatTime(dateTime)}';
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in PaymentHistoryPage', error: e, stackTrace: stackTrace, name: 'PaymentHistoryPage');
+
       return dateString;
     }
   }

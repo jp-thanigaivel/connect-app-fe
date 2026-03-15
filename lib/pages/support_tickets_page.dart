@@ -4,6 +4,8 @@ import 'package:connect/services/support_api_service.dart';
 import 'package:connect/models/support_ticket.dart';
 import 'package:connect/components/create_ticket_bottom_sheet.dart';
 import 'package:connect/core/api/api_client.dart';
+import 'package:connect/core/utils/app_logger.dart';
+
 
 class SupportTicketsPage extends StatefulWidget {
   const SupportTicketsPage({super.key});
@@ -91,7 +93,9 @@ class _SupportTicketsPageState extends State<SupportTicketsPage> {
           _isLoadingMore = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in SupportTicketsPage', error: e, stackTrace: stackTrace, name: 'SupportTicketsPage');
+
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -380,7 +384,9 @@ class _TicketCard extends StatelessWidget {
     try {
       final dateTime = DateTime.parse(dateString);
       return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in SupportTicketsPage', error: e, stackTrace: stackTrace, name: 'SupportTicketsPage');
+
       return dateString;
     }
   }

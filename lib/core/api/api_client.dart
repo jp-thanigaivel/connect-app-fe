@@ -5,6 +5,8 @@ import 'package:connect/core/config/retry_config.dart';
 import 'package:connect/globals/navigator_key.dart'; // Import to access navigatorKey
 import 'package:flutter/material.dart'; // Import for SnackBar
 import 'package:connect/core/utils/ui_utils.dart';
+import 'package:connect/core/utils/app_logger.dart';
+
 import 'dart:developer' as developer;
 
 class ApiClient {
@@ -40,15 +42,17 @@ class ApiClient {
           }
 
           final String message = statusDesc ?? _getFriendlyErrorMessage(e);
+          final String method = e.requestOptions.method;
+          final String path = e.requestOptions.path;
 
-          developer.log(
-            'API Error: [$statusCode] $message',
-            name: 'ApiClient',
-            error: responseData,
-          );
+          final String fullContextMessage =
+              'API Error: [$method $path] -> Status: $statusCode | Message: $message\nRaw Response: $responseData';
+
+          AppLogger.error(fullContextMessage,
+              stackTrace: e.stackTrace, name: 'ApiClient');
 
           if (statusCode == 401 || statusCode == 403) {
-            developer.log(
+            AppLogger.info(
                 'Unauthorized access ($statusCode) - logging out user',
                 name: 'ApiClient');
 
@@ -85,9 +89,13 @@ class ApiClient {
         if (statusCodeStr != null &&
             !statusCodeStr.startsWith('2') &&
             statusDesc != null) {
-          developer.log(
-              'Semantic Error detected in 200 response: [$statusCodeStr] $statusDesc',
-              name: 'ApiClient');
+          final String method = response.requestOptions.method;
+          final String path = response.requestOptions.path;
+
+          final String fullContextMessage =
+              'API Semantic Error: [$method $path] -> Status: $statusCodeStr | Message: $statusDesc\nRaw Response: ${response.data}';
+
+          AppLogger.error(fullContextMessage, name: 'ApiClient');
           _showErrorSnackBar(statusDesc);
         }
       }
@@ -203,10 +211,9 @@ class ApiClient {
 
         // Log success after retry
         if (attemptNumber > 0) {
-          developer.log(
-            '$operationName succeeded after $attemptNumber retries',
-            name: 'ApiClient',
-          );
+          AppLogger.info(
+              '$operationName succeeded after $attemptNumber retries',
+              name: 'ApiClient');
         }
 
         return result;
@@ -215,19 +222,17 @@ class ApiClient {
 
         // If we've exhausted all retries, throw the error
         if (attemptNumber > retryConfig.maxRetries) {
-          developer.log(
-            '$operationName failed after ${retryConfig.maxRetries} retries: $e',
-            name: 'ApiClient',
-          );
+          AppLogger.error(
+              '$operationName failed after ${retryConfig.maxRetries} retries: $e',
+              name: 'ApiClient');
           rethrow;
         }
 
         // Calculate delay and wait before retry
         final delay = retryConfig.getDelayForAttempt(attemptNumber);
-        developer.log(
-          '$operationName failed (attempt $attemptNumber/${retryConfig.maxRetries}), retrying in ${delay.inSeconds}s',
-          name: 'ApiClient',
-        );
+        AppLogger.error(
+            '$operationName failed (attempt $attemptNumber/${retryConfig.maxRetries}), retrying in ${delay.inSeconds}s',
+            name: 'ApiClient');
         await Future.delayed(delay);
       }
     }

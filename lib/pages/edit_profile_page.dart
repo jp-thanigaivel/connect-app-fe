@@ -5,6 +5,8 @@ import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:connect/models/user_profile.dart';
 import 'package:connect/services/user_api_service.dart';
 import 'package:connect/core/utils/ui_utils.dart';
+import 'package:connect/core/utils/app_logger.dart';
+
 
 @NowaGenerated()
 class EditProfilePage extends StatefulWidget {
@@ -87,7 +89,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
           UiUtils.showErrorSnackBar('Failed to update profile');
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in EditProfilePage', error: e, stackTrace: stackTrace, name: 'EditProfilePage');
+
       if (mounted) {
         final errorMessage = ApiClient.getErrorMessage(e);
         UiUtils.showErrorSnackBar(errorMessage);

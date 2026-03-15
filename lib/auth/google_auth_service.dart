@@ -1,4 +1,6 @@
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:connect/core/utils/app_logger.dart';
+
 import 'dart:developer' as developer;
 
 class GoogleAuthService {
@@ -16,35 +18,27 @@ class GoogleAuthService {
   /// Performs Google Sign-In and returns the response containing tokens.
   Future<GoogleSignInAuthentication?> signIn() async {
     try {
-      developer.log('Starting Google Sign-In flow...',
-          name: 'GoogleAuthService');
+      AppLogger.info('Starting Google Sign-In flow...', name: 'GoogleAuthService');
 
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) {
-        developer.log('User cancelled the Google Sign-In flow.',
-            name: 'GoogleAuthService');
+        AppLogger.info('User cancelled the Google Sign-In flow.', name: 'GoogleAuthService');
         return null;
       }
 
-      developer.log(
-          'User signed in: ${googleUser.displayName} (${googleUser.email})',
-          name: 'GoogleAuthService');
+      AppLogger.info('User signed in: ${googleUser.displayName} (${googleUser.email})', name: 'GoogleAuthService');
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
-      developer.log('Tokens retrieved successfully.',
-          name: 'GoogleAuthService');
-      developer.log('idToken: ${googleAuth.idToken}',
-          name: 'GoogleAuthService');
-      developer.log('accessToken: ${googleAuth.accessToken}',
-          name: 'GoogleAuthService');
+      AppLogger.info('Tokens retrieved successfully.', name: 'GoogleAuthService');
+      AppLogger.info('idToken: ${googleAuth.idToken}', name: 'GoogleAuthService');
+      AppLogger.info('accessToken: ${googleAuth.accessToken}', name: 'GoogleAuthService');
 
       return googleAuth;
     } catch (error) {
-      developer.log('Error during Google Sign-In: $error',
-          name: 'GoogleAuthService');
+      AppLogger.error('Error during Google Sign-In: $error', name: 'GoogleAuthService');
       rethrow;
     }
   }
@@ -53,10 +47,9 @@ class GoogleAuthService {
   Future<void> signOut() async {
     try {
       await _googleSignIn.signOut();
-      developer.log('User signed out.', name: 'GoogleAuthService');
+      AppLogger.info('User signed out.', name: 'GoogleAuthService');
     } catch (error) {
-      developer.log('Error during Google Sign-Out: $error',
-          name: 'GoogleAuthService');
+      AppLogger.error('Error during Google Sign-Out: $error', name: 'GoogleAuthService');
     }
   }
 

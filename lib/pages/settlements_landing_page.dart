@@ -6,6 +6,8 @@ import 'package:connect/components/bottom_sheet_wrapper.dart';
 import 'package:connect/core/config/currency_config.dart';
 import 'package:connect/core/utils/ui_utils.dart';
 import 'package:flutter/services.dart';
+import 'package:connect/core/utils/app_logger.dart';
+
 
 class SettlementsLandingPage extends StatefulWidget {
   const SettlementsLandingPage({super.key});
@@ -47,7 +49,9 @@ class _SettlementsLandingPageState extends State<SettlementsLandingPage> {
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in SettlementsLandingPage', error: e, stackTrace: stackTrace, name: 'SettlementsLandingPage');
+
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -318,7 +322,9 @@ class _SettlementCard extends StatelessWidget {
         'Dec'
       ];
       return '${dateTime.day} ${months[dateTime.month]}, ${dateTime.year} • ${_formatTime(dateTime)}';
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in SettlementsLandingPage', error: e, stackTrace: stackTrace, name: 'SettlementsLandingPage');
+
       return dateStr;
     }
   }

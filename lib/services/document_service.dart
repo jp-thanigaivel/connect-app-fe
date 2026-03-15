@@ -3,6 +3,8 @@ import 'package:dio/dio.dart';
 import 'package:connect/core/api/api_client.dart';
 import 'package:connect/core/constants/api_constants.dart';
 import 'package:connect/models/api_response.dart';
+import 'package:connect/core/utils/app_logger.dart';
+
 import 'dart:developer' as developer;
 
 class DocumentService {
@@ -29,8 +31,7 @@ class DocumentService {
         (json) => json as Map<String, dynamic>,
       );
     } catch (error) {
-      developer.log('Error getting presigned URL: $error',
-          name: 'DocumentService');
+      AppLogger.error('Error getting presigned URL: $error', name: 'DocumentService');
       rethrow;
     }
   }
@@ -56,14 +57,13 @@ class DocumentService {
         data: formData,
       );
 
-      developer.log('S3 Upload Status: ${response.statusCode}',
-          name: 'DocumentService');
+      AppLogger.info('S3 Upload Status: ${response.statusCode}', name: 'DocumentService');
 
       if (response.statusCode != 204 && response.statusCode != 200) {
         throw Exception('Failed to upload file to S3');
       }
     } catch (error) {
-      developer.log('Error uploading to S3: $error', name: 'DocumentService');
+      AppLogger.error('Error uploading to S3: $error', name: 'DocumentService');
       rethrow;
     }
   }

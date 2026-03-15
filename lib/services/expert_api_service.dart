@@ -5,6 +5,8 @@ import 'package:connect/models/expert.dart';
 import 'dart:developer' as developer;
 
 import 'package:connect/models/search_config.dart';
+import 'package:connect/core/utils/app_logger.dart';
+
 
 class ExpertApiService {
   final ApiClient _apiClient = ApiClient();
@@ -41,15 +43,14 @@ class ExpertApiService {
         queryParameters: queryParams,
       );
 
-      developer.log('Fetch experts response: ${response.statusCode}',
-          name: 'ExpertApiService');
+      AppLogger.info('Fetch experts response: ${response.statusCode}', name: 'ExpertApiService');
 
       return ApiResponse.fromJson(
         response.data,
         (json) => (json as List).map((e) => Expert.fromJson(e)).toList(),
       );
     } catch (error) {
-      developer.log('Error fetching experts: $error', name: 'ExpertApiService');
+      AppLogger.error('Error fetching experts: $error', name: 'ExpertApiService');
       rethrow;
     }
   }
@@ -57,15 +58,13 @@ class ExpertApiService {
   Future<ApiResponse<SearchConfig>> getSearchConfig() async {
     try {
       final response = await _apiClient.get(ApiConstants.searchConfig);
-      developer.log('Fetch search config response: ${response.statusCode}',
-          name: 'ExpertApiService');
+      AppLogger.info('Fetch search config response: ${response.statusCode}', name: 'ExpertApiService');
       return ApiResponse.fromJson(
         response.data,
         (json) => SearchConfig.fromJson(json),
       );
     } catch (error) {
-      developer.log('Error fetching search config: $error',
-          name: 'ExpertApiService');
+      AppLogger.error('Error fetching search config: $error', name: 'ExpertApiService');
       rethrow;
     }
   }
@@ -74,15 +73,13 @@ class ExpertApiService {
     try {
       final response =
           await _apiClient.get('${ApiConstants.expertByUserId}/$userId');
-      developer.log('Fetch expert by userId response: ${response.statusCode}',
-          name: 'ExpertApiService');
+      AppLogger.info('Fetch expert by userId response: ${response.statusCode}', name: 'ExpertApiService');
       return ApiResponse.fromJson(
         response.data,
         (json) => Expert.fromJson(json),
       );
     } catch (error) {
-      developer.log('Error fetching expert by userId: $error',
-          name: 'ExpertApiService');
+      AppLogger.error('Error fetching expert by userId: $error', name: 'ExpertApiService');
       rethrow;
     }
   }
@@ -94,14 +91,13 @@ class ExpertApiService {
         '${ApiConstants.experts}/$expertId',
         data: data,
       );
-      developer.log('Update expert response: ${response.statusCode}',
-          name: 'ExpertApiService');
+      AppLogger.info('Update expert response: ${response.statusCode}', name: 'ExpertApiService');
       return ApiResponse.fromJson(
         response.data,
         (json) => Expert.fromJson(json),
       );
     } catch (error) {
-      developer.log('Error updating expert: $error', name: 'ExpertApiService');
+      AppLogger.error('Error updating expert: $error', name: 'ExpertApiService');
       rethrow;
     }
   }
@@ -109,16 +105,13 @@ class ExpertApiService {
   Future<ApiResponse<List<AllowedValue>>> getAvailableLanguages() async {
     try {
       final response = await _apiClient.get(ApiConstants.expertLanguages);
-      developer.log(
-          'Fetch available languages response: ${response.statusCode}',
-          name: 'ExpertApiService');
+      AppLogger.info('Fetch available languages response: ${response.statusCode}', name: 'ExpertApiService');
       return ApiResponse.fromJson(
         response.data,
         (json) => (json as List).map((e) => AllowedValue.fromJson(e)).toList(),
       );
     } catch (error) {
-      developer.log('Error fetching available languages: $error',
-          name: 'ExpertApiService');
+      AppLogger.error('Error fetching available languages: $error', name: 'ExpertApiService');
       rethrow;
     }
   }
@@ -126,16 +119,13 @@ class ExpertApiService {
   Future<ApiResponse<List<AllowedValue>>> getAvailableExpertiseTags() async {
     try {
       final response = await _apiClient.get(ApiConstants.expertExpertiseTags);
-      developer.log(
-          'Fetch available expertise tags response: ${response.statusCode}',
-          name: 'ExpertApiService');
+      AppLogger.info('Fetch available expertise tags response: ${response.statusCode}', name: 'ExpertApiService');
       return ApiResponse.fromJson(
         response.data,
         (json) => (json as List).map((e) => AllowedValue.fromJson(e)).toList(),
       );
     } catch (error) {
-      developer.log('Error fetching available expertise tags: $error',
-          name: 'ExpertApiService');
+      AppLogger.error('Error fetching available expertise tags: $error', name: 'ExpertApiService');
       rethrow;
     }
   }

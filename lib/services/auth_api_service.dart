@@ -6,6 +6,8 @@ import 'package:connect/core/api/api_client.dart';
 import 'package:connect/core/constants/api_constants.dart';
 import 'package:connect/core/api/token_manager.dart';
 import 'package:connect/core/config/retry_config.dart';
+import 'package:connect/core/utils/app_logger.dart';
+
 import 'dart:developer' as developer;
 
 class AuthApiService {
@@ -22,8 +24,7 @@ class AuthApiService {
         data: {'idToken': idToken},
       );
 
-      developer.log('Backend response status: ${response.statusCode}',
-          name: 'AuthApiService');
+      AppLogger.info('Backend response status: ${response.statusCode}', name: 'AuthApiService');
 
       final Map<String, dynamic> data = response.data;
       final authResponse = AuthResponse.fromJson(data);
@@ -47,8 +48,7 @@ class AuthApiService {
         throw Exception(errorMsg);
       }
     } catch (error) {
-      developer.log('Error during backend login: $error',
-          name: 'AuthApiService');
+      AppLogger.error('Error during backend login: $error', name: 'AuthApiService');
       rethrow;
     }
   }
@@ -63,8 +63,7 @@ class AuthApiService {
         },
       );
 
-      developer.log('Admin login response status: ${response.statusCode}',
-          name: 'AuthApiService');
+      AppLogger.info('Admin login response status: ${response.statusCode}', name: 'AuthApiService');
 
       final Map<String, dynamic> data = response.data;
       final authResponse = AuthResponse.fromJson(data);
@@ -87,7 +86,7 @@ class AuthApiService {
             : 'Admin login failed');
       }
     } catch (error) {
-      developer.log('Error during admin login: $error', name: 'AuthApiService');
+      AppLogger.error('Error during admin login: $error', name: 'AuthApiService');
       rethrow;
     }
   }
@@ -100,8 +99,7 @@ class AuthApiService {
     try {
       final response = await _apiClient.post(ApiConstants.zegoTokenRefresh);
 
-      developer.log('Zego token refresh status: ${response.statusCode}',
-          name: 'AuthApiService');
+      AppLogger.info('Zego token refresh status: ${response.statusCode}', name: 'AuthApiService');
       // if (kDebugMode) {
       //   debugPrint('Zego token refresh status: ${response.statusCode}');
       // }
@@ -120,8 +118,7 @@ class AuthApiService {
         throw Exception(zegoResponse.status.statusDesc);
       }
     } catch (error) {
-      developer.log('Error refreshing Zego token: $error',
-          name: 'AuthApiService');
+      AppLogger.error('Error refreshing Zego token: $error', name: 'AuthApiService');
       rethrow;
     }
   }
@@ -146,8 +143,7 @@ class AuthApiService {
         retryConfig: retryConfig ?? RetryConfig.standard,
       );
 
-      developer.log(
-          'Heartbeat status: ${response.statusCode}${status != null ? ' (status: $status)' : ''}',
+      AppLogger.info('Heartbeat status: ${response.statusCode}${status != null ? ')' : ''}',
           name: 'AuthApiService');
 
       final apiResponse = ApiResponse<HeartbeatData>.fromJson(
@@ -157,7 +153,7 @@ class AuthApiService {
 
       return apiResponse;
     } catch (error) {
-      developer.log('Error sending heartbeat: $error', name: 'AuthApiService');
+      AppLogger.error('Error sending heartbeat: $error', name: 'AuthApiService');
       rethrow;
     }
   }

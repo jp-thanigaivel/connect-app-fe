@@ -9,6 +9,8 @@ import 'package:connect/models/promotion.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import 'dart:developer' as developer;
 import 'package:connect/globals/navigator_key.dart';
+import 'package:connect/core/utils/app_logger.dart';
+
 
 class CallLimitManager {
   static final CallLimitManager _instance = CallLimitManager._internal();
@@ -58,9 +60,7 @@ class CallLimitManager {
 
     if (_isEndUser && pricePerMinute > 0) {
       _allowedSeconds = (coins / pricePerMinute) * 60;
-      developer.log(
-          'Call limit initialized: $_allowedSeconds seconds ($coins coins @ $pricePerMinute/min)',
-          name: 'CallLimitManager');
+      AppLogger.info('Call limit initialized: $_allowedSeconds seconds ($coins coins @ $pricePerMinute/min)', name: 'CallLimitManager');
     }
   }
 
@@ -85,8 +85,7 @@ class CallLimitManager {
     // 2. Out of balance - try refresh once
     if (remainingSeconds <= 0 && !_isRefreshing && !_gracePeriodStarted) {
       _isRefreshing = true;
-      developer.log('Balance reached zero, refreshing...',
-          name: 'CallLimitManager');
+      AppLogger.info('Balance reached zero, refreshing...', name: 'CallLimitManager');
       await _refreshBalance(currentSeconds);
       _isRefreshing = false;
 
@@ -94,8 +93,7 @@ class CallLimitManager {
       if (_allowedSeconds! <= currentSeconds) {
         _gracePeriodStarted = true;
         _graceStartTime = DateTime.now();
-        developer.log('Grace period started for 1 minute.',
-            name: 'CallLimitManager');
+        AppLogger.info('Grace period started for 1 minute.', name: 'CallLimitManager');
       } else {
         // We got more balance, reset intervals that are now in the future
         _triggeredIntervals.removeWhere(
@@ -125,16 +123,13 @@ class CallLimitManager {
           _triggeredIntervals.removeWhere(
               (interval) => (_allowedSeconds! - currentSeconds) > interval);
           _removeBanner();
-          developer.log(
-              'Balance replenished ($newBalance coins) during grace period. Resuming normal monitoring.',
-              name: 'CallLimitManager');
+          AppLogger.info('Balance replenished ($newBalance coins) during grace period. Resuming normal monitoring.', name: 'CallLimitManager');
           return;
         }
       }
 
       if (graceElapsed >= 60) {
-        developer.log('Grace period ended. Hanging up.',
-            name: 'CallLimitManager');
+        AppLogger.info('Grace period ended. Hanging up.', name: 'CallLimitManager');
         controller.hangUp(navigatorKey.currentState!.context);
         reset();
       }
@@ -148,14 +143,11 @@ class CallLimitManager {
         final newBalance = response.data!.balance.toDouble();
         // Recalculate total allowed seconds from call start
         _allowedSeconds = currentSeconds + (newBalance / _pricePerMinute!) * 60;
-        developer.log(
-            'Balance refreshed: $newBalance coins. New total allowed seconds: $_allowedSeconds',
-            name: 'CallLimitManager');
+        AppLogger.info('Balance refreshed: $newBalance coins. New total allowed seconds: $_allowedSeconds', name: 'CallLimitManager');
         return newBalance;
       }
     } catch (e) {
-      developer.log('Error refreshing balance during call: $e',
-          name: 'CallLimitManager');
+      AppLogger.error('Error refreshing balance during call: $e', name: 'CallLimitManager');
     }
     return null;
   }
@@ -188,43 +180,39 @@ class CallLimitManager {
   }
 
   Future<void> _handleRechargeAction() async {
-    developer.log('Add Coins button clicked', name: 'CallLimitManager');
+    AppLogger.info('Add Coins button clicked', name: 'CallLimitManager');
     final context = navigatorKey.currentState?.context;
     if (context == null) {
-      developer.log('Navigation context is null!', name: 'CallLimitManager');
+      AppLogger.info('Navigation context is null!', name: 'CallLimitManager');
       return;
     }
 
     try {
       // Check for promotions first
-      developer.log('Fetching promotions...', name: 'CallLimitManager');
+      AppLogger.info('Fetching promotions...', name: 'CallLimitManager');
       final promoResponse = await _promotionApiService.getPromotions();
       final promotions = promoResponse.data ?? [];
-      developer.log('Found ${promotions.length} promotions',
-          name: 'CallLimitManager');
+      AppLogger.info('Found ${promotions.length} promotions', name: 'CallLimitManager');
 
       if (context.mounted) {
         if (promotions.isNotEmpty) {
-          developer.log('Showing promotion popup', name: 'CallLimitManager');
+          AppLogger.info('Showing promotion popup', name: 'CallLimitManager');
           PromotionPopup
               .resetShownFlag(); // Reset to ensure it shows for this action
           PromotionPopup.show(context, promotions, (promo) {
-            developer.log('Promotion selected: ${promo.promotionCode}',
-                name: 'CallLimitManager');
+            AppLogger.info('Promotion selected: ${promo.promotionCode}', name: 'CallLimitManager');
             _navigateToProfileRecharge(context, promotion: promo);
           });
           // Also hide the banner since they are now in the recharge flow
           dismissBanner();
         } else {
-          developer.log('No promotions found, navigating to Profile',
-              name: 'CallLimitManager');
+          AppLogger.info('No promotions found, navigating to Profile', name: 'CallLimitManager');
           _navigateToProfileRecharge(context);
           dismissBanner();
         }
       }
     } catch (e) {
-      developer.log('Error handling recharge action: $e',
-          name: 'CallLimitManager');
+      AppLogger.error('Error handling recharge action: $e', name: 'CallLimitManager');
       if (context.mounted) {
         _navigateToProfileRecharge(context);
         dismissBanner();

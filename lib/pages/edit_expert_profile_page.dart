@@ -3,6 +3,8 @@ import 'package:connect/models/expert.dart';
 import 'package:connect/services/expert_api_service.dart';
 import 'package:connect/core/utils/ui_utils.dart';
 import 'package:connect/core/config/currency_config.dart';
+import 'package:connect/core/utils/app_logger.dart';
+
 
 class EditExpertProfilePage extends StatefulWidget {
   const EditExpertProfilePage({super.key});
@@ -59,7 +61,9 @@ class _EditExpertProfilePageState extends State<EditExpertProfilePage> {
         UiUtils.showSuccessSnackBar('Expert profile updated');
         Navigator.pop(context, response.data);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in EditExpertProfilePage', error: e, stackTrace: stackTrace, name: 'EditExpertProfilePage');
+
       if (mounted) {
         UiUtils.showErrorSnackBar('Failed to update profile: $e');
       }

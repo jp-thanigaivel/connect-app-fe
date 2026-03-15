@@ -13,6 +13,8 @@ import 'package:connect/services/promotion_api_service.dart';
 import 'package:connect/components/promotion_popup.dart';
 import 'package:connect/components/promotion_carousel.dart';
 import 'package:connect/core/api/token_manager.dart';
+import 'package:connect/core/utils/app_logger.dart';
+
 import 'dart:developer' as developer;
 
 @NowaGenerated()
@@ -107,9 +109,10 @@ class _UsersLandingPageState extends State<UsersLandingPage> {
           }*/
         });
       }
-    } catch (e) {
-      developer.log('Error fetching search config: $e',
-          name: 'UsersLandingPage');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in UsersLandingPage', error: e, stackTrace: stackTrace, name: 'UsersLandingPage');
+
+      AppLogger.error('Error fetching search config: $e', name: 'UsersLandingPage');
     }
   }
 
@@ -163,7 +166,9 @@ class _UsersLandingPageState extends State<UsersLandingPage> {
           _isLoadingMore = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in UsersLandingPage', error: e, stackTrace: stackTrace, name: 'UsersLandingPage');
+
       setState(() {
         if (!isLoadMore) {
           _errorMessage = 'Failed to load experts. Please try again later.';
@@ -171,7 +176,7 @@ class _UsersLandingPageState extends State<UsersLandingPage> {
         _isLoading = false;
         _isLoadingMore = false;
       });
-      developer.log('Error in UsersLandingPage: $e', name: 'UsersLandingPage');
+      AppLogger.error('Error in UsersLandingPage: $e', name: 'UsersLandingPage');
     }
   }
 
@@ -191,9 +196,10 @@ class _UsersLandingPageState extends State<UsersLandingPage> {
           _walletBalance = response.data;
         });
       }
-    } catch (e) {
-      developer.log('Error fetching wallet balance in UsersLandingPage: $e',
-          name: 'UsersLandingPage');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in UsersLandingPage', error: e, stackTrace: stackTrace, name: 'UsersLandingPage');
+
+      AppLogger.error('Error fetching wallet balance in UsersLandingPage: $e', name: 'UsersLandingPage');
     }
   }
 
@@ -230,7 +236,9 @@ class _UsersLandingPageState extends State<UsersLandingPage> {
           });
         }
       } else {}
-    } catch (e) {}
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in UsersLandingPage', error: e, stackTrace: stackTrace, name: 'UsersLandingPage');
+}
   }
 
   List<Expert> get filteredAndSortedExperts {

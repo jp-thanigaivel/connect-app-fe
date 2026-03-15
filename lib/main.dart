@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
@@ -26,7 +27,9 @@ import 'dart:developer' as developer;
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 
 @NowaGenerated()
+import 'package:connect/core/services/sentry_service.dart';
 import 'package:connect/globals/navigator_key.dart';
+import 'package:connect/core/utils/app_logger.dart';
 
 @NowaGenerated()
 late final SharedPreferences sharedPrefs;
@@ -44,7 +47,13 @@ main() async {
   /// 1.1.2: set navigator key to ZegoUIKitPrebuiltCallInvitationService
   ZegoUIKitPrebuiltCallInvitationService().setNavigatorKey(navigatorKey);
 
-  runApp(const MyApp());
+  await dotenv.load(fileName: ".env");
+
+  await SentryService.init(
+    dsn: dotenv.env['SENTRY_DSN'] ?? '',
+    appRunner: () => runApp(const MyApp()),
+    debug: true,
+  );
 }
 
 @NowaGenerated({'visibleInNowa': false})
@@ -71,20 +80,20 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    developer.log('AppLifecycleState changed to: $state', name: 'MyApp');
+    AppLogger.info('AppLifecycleState changed to: $state', name: 'MyApp');
 
     switch (state) {
       case AppLifecycleState.resumed:
-        developer.log('App resumed - heartbeats continuing', name: 'MyApp');
+        AppLogger.info('App resumed - heartbeats continuing', name: 'MyApp');
         break;
       case AppLifecycleState.inactive:
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
-        developer.log('App in background - heartbeats will continue',
+        AppLogger.info('App in background - heartbeats will continue',
             name: 'MyApp');
         break;
       case AppLifecycleState.detached:
-        developer.log('App being terminated - stopping heartbeats',
+        AppLogger.info('App being terminated - stopping heartbeats',
             name: 'MyApp');
         UserHeartbeatManager.instance.stop();
         CallHeartbeatManager.instance.stop();
