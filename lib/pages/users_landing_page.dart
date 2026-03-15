@@ -207,7 +207,9 @@ class _UsersLandingPageState extends State<UsersLandingPage> {
           _promotions = response.data!;
         });
         // Show promotion popup if there are promotions and user is an end user
-        if (mounted && (_userType == 'ENDUSER' || _userType != 'EXPERT')) {
+        if (mounted &&
+            (_userType == 'ENDUSER' || _userType != 'EXPERT') &&
+            _promotions.isNotEmpty) {
           Future.delayed(const Duration(milliseconds: 500), () {
             if (mounted) {
               PromotionPopup.show(
